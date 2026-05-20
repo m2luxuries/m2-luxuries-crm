@@ -188,6 +188,16 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 .report-bar-label{display:flex;justify-content:space-between;font-size:13px;}
 .report-bar-track{height:6px;background:var(--surface3);border-radius:4px;overflow:hidden;margin-top:4px;}
 .report-bar-fill{height:100%;background:var(--text2);border-radius:4px;}
+.status-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
+.status-tile{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:background .15s;}
+.status-tile:active{background:var(--surface3);}
+.status-tile-num{font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;}
+.status-tile-lbl{font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--muted);text-transform:uppercase;text-align:center;}
+.status-tile.lead   .status-tile-num{color:var(--blue);}
+.status-tile.quoted .status-tile-num{color:var(--yellow);}
+.status-tile.booked .status-tile-num{color:#ccc;}
+.status-tile.progress .status-tile-num{color:var(--orange);}
+.status-tile.complete .status-tile-num{color:var(--green);}
 .loading-screen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
 .loading-logo{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:2px;}
 .loading-sub{font-size:13px;color:var(--muted);}
@@ -220,15 +230,13 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="stat-card"><div class="stat-label">New Leads</div><div class="stat-value" id="d-leads">0</div><div class="stat-sub">Need follow-up</div></div>
   </div>
   <div class="card"><div class="section-title">Recent Jobs</div><div id="d-recent-jobs"><div class="empty-state"><div class="empty-icon">🚗</div><div class="empty-text">No jobs yet</div></div></div></div>
-  <div class="card">
-    <div class="section-title">Jobs by Status</div>
-    <div class="status-list">
-      <div class="status-row"><div class="status-hdr"><span>Lead</span><span class="status-cnt" id="sb-lead">0</span></div><div class="bar-track"><div class="bar-fill" id="bb-lead" style="width:0%"></div></div></div>
-      <div class="status-row"><div class="status-hdr"><span>Quoted</span><span class="status-cnt" id="sb-quoted">0</span></div><div class="bar-track"><div class="bar-fill" id="bb-quoted" style="width:0%"></div></div></div>
-      <div class="status-row"><div class="status-hdr"><span>Booked</span><span class="status-cnt" id="sb-booked">0</span></div><div class="bar-track"><div class="bar-fill" id="bb-booked" style="width:0%"></div></div></div>
-      <div class="status-row"><div class="status-hdr"><span>In Progress</span><span class="status-cnt" id="sb-progress">0</span></div><div class="bar-track"><div class="bar-fill" id="bb-progress" style="width:0%"></div></div></div>
-      <div class="status-row"><div class="status-hdr"><span>Complete</span><span class="status-cnt" id="sb-complete">0</span></div><div class="bar-track"><div class="bar-fill" id="bb-complete" style="width:0%"></div></div></div>
-    </div>
+  <!-- Status tiles on dashboard — tap to jump to pipeline filtered -->
+  <div class="status-grid">
+    <div class="status-tile lead"     onclick="showPage('pipeline');filterPipeline('Lead')">       <div class="status-tile-num" id="sb-lead">0</div>     <div class="status-tile-lbl">Lead</div></div>
+    <div class="status-tile quoted"   onclick="showPage('pipeline');filterPipeline('Quoted')">     <div class="status-tile-num" id="sb-quoted">0</div>   <div class="status-tile-lbl">Quoted</div></div>
+    <div class="status-tile booked"   onclick="showPage('pipeline');filterPipeline('Booked')">     <div class="status-tile-num" id="sb-booked">0</div>   <div class="status-tile-lbl">Booked</div></div>
+    <div class="status-tile progress" onclick="showPage('pipeline');filterPipeline('In Progress')"><div class="status-tile-num" id="sb-progress">0</div> <div class="status-tile-lbl">In Prog</div></div>
+    <div class="status-tile complete" onclick="showPage('pipeline');filterPipeline('Complete')">   <div class="status-tile-num" id="sb-complete">0</div> <div class="status-tile-lbl">Done</div></div>
   </div>
   <div class="card"><div class="section-title">Top Clients by Value</div><div id="d-top-clients"><div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">No clients yet</div></div></div></div>
 </div>
@@ -324,7 +332,15 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 
 <!-- PIPELINE -->
 <div class="page" id="page-pipeline">
-  <div class="page-hdr"><div><div class="page-title">Pipeline</div><div class="page-sub">Active job stages</div></div></div>
+  <div class="page-hdr"><div><div class="page-title">Pipeline</div><div class="page-sub">All job stages</div></div></div>
+  <!-- Status count tiles -->
+  <div class="status-grid">
+    <div class="status-tile lead"     onclick="filterPipeline('Lead')">       <div class="status-tile-num" id="pt-lead">0</div>     <div class="status-tile-lbl">Lead</div></div>
+    <div class="status-tile quoted"   onclick="filterPipeline('Quoted')">     <div class="status-tile-num" id="pt-quoted">0</div>   <div class="status-tile-lbl">Quoted</div></div>
+    <div class="status-tile booked"   onclick="filterPipeline('Booked')">     <div class="status-tile-num" id="pt-booked">0</div>   <div class="status-tile-lbl">Booked</div></div>
+    <div class="status-tile progress" onclick="filterPipeline('In Progress')"><div class="status-tile-num" id="pt-progress">0</div> <div class="status-tile-lbl">In Prog</div></div>
+    <div class="status-tile complete" onclick="filterPipeline('Complete')">   <div class="status-tile-num" id="pt-complete">0</div> <div class="status-tile-lbl">Done</div></div>
+  </div>
   <div class="card"><div id="pipeline-content"></div></div>
 </div>
 
@@ -1254,12 +1270,55 @@ function deletePhoto(idx){
 // ══════════════════════════════════════════════════════
 // PIPELINE
 // ══════════════════════════════════════════════════════
+var pipelineFilter = null;
+
+function filterPipeline(status) {
+  pipelineFilter = (pipelineFilter === status) ? null : status; // toggle
+  // highlight active tile
+  document.querySelectorAll('.status-tile').forEach(t=>t.style.opacity='1');
+  if(pipelineFilter) {
+    document.querySelectorAll('.status-tile').forEach(t=>{
+      var lbl = t.querySelector('.status-tile-lbl').textContent;
+      var match = {Lead:'Lead',Quoted:'Quoted',Booked:'Booked','In Progress':'In Prog',Complete:'Done'}[pipelineFilter];
+      t.style.opacity = lbl===match ? '1' : '0.4';
+    });
+  }
+  renderPipeline();
+}
+
 function renderPipeline(){
-  var stages=['Lead','Quoted','Booked','In Progress'];
-  document.getElementById('pipeline-content').innerHTML=stages.map(stage=>{
-    var sj=jobs.filter(j=>j.status===stage);
-    var items=sj.length?sj.map(j=>{var c=getClientById(j.clientId);return`<div class="job-row" onclick="viewJob(${j.id})" style="cursor:pointer"><div class="job-info"><div class="job-name">${c?c.name:'Unknown'}</div><div class="job-meta">${j.service}</div></div><div class="job-right"><div class="job-price">${fmt(j.price)}</div><span style="color:var(--muted);font-size:18px">›</span></div></div>`;}).join(''):'<div class="empty-stage">No jobs in '+stage+'</div>';
-    return`<div class="stage-block"><div class="stage-label">${stage} <span class="stage-count">${sj.length}</span></div>${items}</div>`;
+  // Update tile counts
+  var allStatuses = ['Lead','Quoted','Booked','In Progress','Complete'];
+  var keys = ['lead','quoted','booked','progress','complete'];
+  allStatuses.forEach((s,i) => {
+    var cnt = jobs.filter(j=>j.status===s).length;
+    var el = document.getElementById('pt-'+keys[i]);
+    if(el) el.textContent = cnt;
+  });
+
+  var stages = pipelineFilter ? [pipelineFilter] : ['Lead','Quoted','Booked','In Progress','Complete'];
+  var el = document.getElementById('pipeline-content');
+  if(!el) return;
+  el.innerHTML = stages.map(stage=>{
+    var sj = jobs.filter(j=>j.status===stage);
+    var items = sj.length
+      ? sj.map(j=>{
+          var c = getClientById(j.clientId);
+          var veh = [j.vehicleYear,j.vehicleMake,j.vehicleModel].filter(Boolean).join(' ');
+          return `<div class="job-row" onclick="viewJob(${j.id})" style="cursor:pointer">
+            <div class="job-info">
+              <div class="job-name">${c?c.name:'Unknown'}</div>
+              <div class="job-meta">${veh?veh+' · ':''}${j.service}</div>
+              <div class="job-meta">${j.date||''}</div>
+            </div>
+            <div class="job-right">
+              <div class="job-price">${fmt(j.price)}</div>
+              <span class="badge ${statusBadge(j.status)}">${j.status}</span>
+            </div>
+          </div>`;
+        }).join('')
+      : `<div class="empty-stage">No jobs in ${stage}</div>`;
+    return `<div class="stage-block"><div class="stage-label">${stage} <span class="stage-count">${sj.length}</span></div>${items}</div>`;
   }).join('');
 }
 
@@ -1343,8 +1402,10 @@ function renderDashboard(){
   var statuses=['Lead','Quoted','Booked','In Progress','Complete'];
   var keys=['lead','quoted','booked','progress','complete'];
   var counts=statuses.map(s=>jobs.filter(j=>j.status===s).length);
-  var mx=Math.max(...counts,1);
-  statuses.forEach((s,i)=>{document.getElementById('sb-'+keys[i]).textContent=counts[i];document.getElementById('bb-'+keys[i]).style.width=(counts[i]/mx*100)+'%';});
+  statuses.forEach((s,i)=>{
+    var el=document.getElementById('sb-'+keys[i]);
+    if(el) el.textContent=counts[i];
+  });
   var recent=jobs.slice().reverse().slice(0,5);
   document.getElementById('d-recent-jobs').innerHTML=recent.length?recent.map(j=>{var c=getClientById(j.clientId);return`<div class="job-row" onclick="viewJob(${j.id})" style="cursor:pointer"><div class="job-info"><div class="job-name">${c?c.name:'Unknown'}</div><div class="job-meta">${c&&c.vehicle?c.vehicle+' · ':''}${j.service}</div><div class="job-meta">${j.date}</div></div><div class="job-right"><div class="job-price">${fmt(j.price)}</div><span class="badge ${statusBadge(j.status)}">${j.status}</span></div></div>`;}).join(''):'<div class="empty-state"><div class="empty-icon">🚗</div><div class="empty-text">No jobs yet</div></div>';
   var cv=clients.map(c=>({c,total:jobs.filter(j=>j.clientId===c.id&&j.status==='Complete').reduce((s,j)=>s+j.price,0),count:jobs.filter(j=>j.clientId===c.id).length})).sort((a,b)=>b.total-a.total).slice(0,5);
