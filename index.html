@@ -271,11 +271,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="status-tile progress" onclick="showPage('pipeline');filterPipeline('In Progress')"><div class="status-tile-num" id="sb-progress">0</div> <div class="status-tile-lbl">In Prog</div></div>
     <div class="status-tile complete" onclick="showPage('pipeline');filterPipeline('Complete')">   <div class="status-tile-num" id="sb-complete">0</div> <div class="status-tile-lbl">Done</div></div>
   </div>
-  
   <div class="card"><div class="section-title">Upcoming Schedule</div><div id="d-upcoming-jobs"><div class="empty-state"><div class="empty-icon">📅</div><div class="empty-text">No active appointments scheduled</div></div></div></div>
-  
-  <div class="card"><div class="section-title">Follow-Up Reminders</div><div id="d-followup-list"><div class="empty-state"><div class="empty-icon">🔔</div><div class="empty-text">No pending follow-ups due</div></div></div></div>
-  
   <div class="card"><div class="section-title">Top Clients by Value</div><div id="d-top-clients"><div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">No clients yet</div></div></div></div>
 </div>
 
@@ -311,7 +307,6 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="detail-section"><div class="detail-label">Vehicle</div><div class="detail-value" id="cd-vehicle">—</div></div>
     <div class="detail-section"><div class="detail-label">Phone</div><div class="detail-value" id="cd-phone">—</div></div>
     <div class="detail-section"><div class="detail-label">Email</div><div class="detail-value" id="cd-email">—</div></div>
-    <div class="detail-section"><div class="detail-label">Next Follow-Up Date</div><div class="detail-value" id="cd-followup">—</div></div>
     <div class="detail-section"><div class="detail-label">Notes</div><div class="detail-value" id="cd-notes">—</div></div>
   </div>
   <div class="card"><div class="section-title">Jobs</div><div id="cd-jobs"><div class="empty-state"><div class="empty-text">No jobs for this client</div></div></div></div>
@@ -376,7 +371,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="status-tile quoted"   onclick="filterPipeline('Quoted')">     <div class="status-tile-num" id="pt-quoted">0</div>   <div class="status-tile-lbl">Quoted</div></div>
     <div class="status-tile booked"   onclick="filterPipeline('Booked')">     <div class="status-tile-num" id="pt-booked">0</div>   <div class="status-tile-lbl">Booked</div></div>
     <div class="status-tile progress" onclick="filterPipeline('In Progress')"><div class="status-tile-num" id="pt-progress">0</div> <div class="status-tile-lbl">In Prog</div></div>
-    <div class="status-tile complete" onclick="filterPipeline('Complete')">   <div class="status-tile-num" id="sb-complete">0</div> <div class="status-tile-lbl">Done</div></div>
+    <div class="status-tile complete" onclick="filterPipeline('Complete')">   <div class="status-tile-num" id="pt-complete">0</div> <div class="status-tile-lbl">Done</div></div>
   </div>
   <div class="card"><div id="pipeline-content"></div></div>
 </div>
@@ -506,7 +501,6 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="field"><label>Vehicle</label><input id="mc-vehicle" placeholder="e.g. 2024 Kia Sorento"></div>
     <div class="field"><label>Phone</label><input id="mc-phone" placeholder="(555) 000-0000" type="tel"></div>
     <div class="field"><label>Email</label><input id="mc-email" placeholder="email@example.com" type="email"></div>
-    <div class="field"><label>Next Follow-Up Date</label><input type="date" id="mc-followup"></div>
     <div class="field"><label>Notes</label><textarea id="mc-notes" placeholder="Any additional notes..."></textarea></div>
     <div class="modal-actions">
       <button class="btn btn-cancel" onclick="closeModal('modal-client')">Cancel</button>
@@ -740,18 +734,11 @@ async function fullSync() {
     var clientIdMap = {};
 
     for (var lc of localClients) {
-      var dbClientData = {
-        name: lc.name,
-        vehicle: lc.vehicle,
-        phone: lc.phone,
-        email: lc.email,
-        notes: lc.notes,
-        next_followup_date: lc.nextFollowupDate
-      };
+      var { id, ...rest } = lc;
       try {
-        var row = await sbInsert('clients', dbClientData);
+        var row = await sbInsert('clients', rest);
         var cloudClient = mapClient(row);
-        clientIdMap[lc.id] = cloudClient.id;
+        clientIdMap[id] = cloudClient.id;
       } catch (err) { console.error('Failed upstreaming local client:', err); }
     }
 
@@ -800,13 +787,13 @@ async function fullSync() {
   }
 }
 
-function mapClient(r) { return { id: r.id, name: r.name||'', vehicle: r.vehicle||'', phone: r.phone||'', email: r.email||'', notes: r.notes||'', nextFollowupDate: r.next_followup_date||'' }; }
+function mapClient(r) { return { id: r.id, name: r.name||'', vehicle: r.vehicle||'', phone: r.phone||'', email: r.email||'', notes: r.notes||'' }; }
 function mapJob(r)    { return { id: r.id, clientId: r.client_id, service: r.service||'', price: parseFloat(r.price)||0, status: r.status||'Lead', date: r.date||'', appointmentTime: r.appointment_time||'', notes: r.notes||'', vehicleYear: r.vehicle_year||'', vehicleMake: r.vehicle_make||'', vehicleModel: r.vehicle_model||'', photos: [] }; }
 function mapExpense(r){ return { id: r.id, name: r.name||'', cat: r.cat||'Other', amount: parseFloat(r.amount)||0, date: r.date||'', notes: r.notes||'' }; }
 function mapComm(r)   { return { id: r.id, clientId: r.client_id, type: r.type||'note', body: r.body||'', ts: r.ts||'', jobId: r.job_id||0 }; }
 
 // ══════════════════════════════════════════════════════
-// INTERACTION UTILITIES
+// INTERACTION UTILITIES & PREMIUM TIME FORMATTER
 // ══════════════════════════════════════════════════════
 function initials(name) { return name.trim().split(' ').filter(Boolean).map(w=>w[0]).join('').toUpperCase().slice(0,2)||'?'; }
 function statusBadge(s) { return {Complete:'badge-complete',Lead:'badge-lead',Quoted:'badge-quoted',Booked:'badge-booked','In Progress':'badge-progress'}[s]||'badge-progress'; }
@@ -889,7 +876,7 @@ document.getElementById('confirm-overlay').addEventListener('click', e => { if(e
 function openAddClient() {
   document.getElementById('mc-id').value='';
   document.getElementById('mc-title').textContent='New Client';
-  ['mc-name','mc-vehicle','mc-phone','mc-email','mc-notes','mc-followup'].forEach(id=>document.getElementById(id).value='');
+  ['mc-name','mc-vehicle','mc-phone','mc-email','mc-notes'].forEach(id=>document.getElementById(id).value='');
   openModal('modal-client');
 }
 function editClient() {
@@ -900,7 +887,6 @@ function editClient() {
   document.getElementById('mc-vehicle').value=c.vehicle||'';
   document.getElementById('mc-phone').value=c.phone||'';
   document.getElementById('mc-email').value=c.email||'';
-  document.getElementById('mc-followup').value=c.nextFollowupDate||'';
   document.getElementById('mc-notes').value=c.notes||'';
   openModal('modal-client');
 }
@@ -908,14 +894,7 @@ async function saveClient() {
   var name = document.getElementById('mc-name').value.trim();
   if(!name) { showToast('⚠️ Name is required'); return; }
   var id = document.getElementById('mc-id').value;
-  var data = { 
-    name, 
-    vehicle: document.getElementById('mc-vehicle').value.trim(), 
-    phone: document.getElementById('mc-phone').value.trim(), 
-    email: document.getElementById('mc-email').value.trim(), 
-    notes: document.getElementById('mc-notes').value.trim(),
-    next_followup_date: document.getElementById('mc-followup').value
-  };
+  var data = { name, vehicle: document.getElementById('mc-vehicle').value.trim(), phone: document.getElementById('mc-phone').value.trim(), email: document.getElementById('mc-email').value.trim(), notes: document.getElementById('mc-notes').value.trim() };
   closeModal('modal-client');
   try {
     if(id) {
@@ -931,12 +910,8 @@ async function saveClient() {
     }
   } catch(err) {
     alert("🔴 CLIENT SAVE REJECTED:\n" + err.message);
-    if(id) { 
-      var c=clients.find(x=>x.id==id); 
-      if(c) { Object.assign(c, { name: data.name, vehicle: data.vehicle, phone: data.phone, email: data.email, notes: data.notes, nextFollowupDate: data.next_followup_date }); } 
-    } else { 
-      clients.push({ id: Date.now(), name: data.name, vehicle: data.vehicle, phone: data.phone, email: data.email, notes: data.notes, nextFollowupDate: data.next_followup_date }); 
-    }
+    if(id) { var c=clients.find(x=>x.id==id); if(c) Object.assign(c,data); }
+    else { data.id = Date.now(); clients.push(data); }
     showToast('✓ Saved locally (sync when online)');
   }
   saveCache(); renderDashboard();
@@ -991,113 +966,54 @@ function updateBulkCount() {
   if(allBtn) allBtn.textContent = bulkSelected.size === clients.length ? 'Deselect All' : 'All';
 }
 
-function bulkDelete() {
-  if(!bulkSelected.size) { showToast('⚠️ No clients selected'); return; }
-  var count = bulkSelected.size;
-  showConfirm(
-    'Delete ' + count + ' client' + (count!==1?'s':'') + '?',
-    'Their jobs and communication logs will also be removed. This cannot be undone.',
-    async function() {
-      setSyncStatus('syncing', 'Deleting ' + count + ' clients...');
-      var ids = Array.from(bulkSelected);
-      for(var id of ids) {
-        try { await sbDelete('clients', id); } catch(e) {}
-        jobs  = jobs.filter(j=>j.clientId!==id);
-        comms = comms.filter(cm=>cm.clientId!==id);
-        clients = clients.filter(c=>c.id!==id);
-      }
-      bulkSelected.clear();
-      bulkMode = false;
-      document.getElementById('bulk-toggle-btn').textContent = 'Select';
-      document.getElementById('bulk-bar').classList.add('hidden');
-      saveCache();
-      setSyncStatus('online', 'Deleted ' + count + ' clients');
-      showToast('✓ ' + count + ' client' + (count!==1?'s':'') + ' deleted');
-      renderClients();
-      renderDashboard();
-    }
-  );
-}
-
-function renderClients(filter) {
-  filter=filter||''; var f=filter.toLowerCase();
-  var list = clients.filter(c=>c.name.toLowerCase().includes(f)||(c.vehicle||'').toLowerCase().includes(f));
-  document.getElementById('clients-sub').textContent = list.length+' client'+(list.length!==1?'s':'');
-  var el = document.getElementById('clients-list');
-  if(!list.length) { el.innerHTML='<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">'+(filter?'No match for "'+filter+'"':'No clients yet. Tap + Client.')+'</div></div>'; return; }
-  el.innerHTML = list.map(c => {
-    var cj = jobs.filter(j=>j.clientId===c.id);
-    var rev = cj.filter(j=>j.status==='Complete').reduce((s,j)=>s+j.price,0);
-    var isChecked = bulkSelected.has(c.id);
-    if(bulkMode) {
-      return `<div class="list-row" onclick="toggleSelectClient(${c.id}, event)" style="cursor:pointer">
-        <div class="client-checkbox ${isChecked?'checked':''}" id="cb-${c.id}">${isChecked?'✓':''}</div>
-        <div class="avatar">${initials(c.name)}</div>
-        <div class="row-info"><div class="row-name">${c.name}</div><div class="row-sub">${c.vehicle||'No vehicle'} · ${cj.length} job${cj.length!==1?'s':''}</div></div>
-        <div class="row-right"><div class="row-value">${fmt(rev)}</div></div>
-      </div>`;
-    }
-    return `<div class="list-row" onclick="viewClient(${c.id})" style="cursor:pointer">
-      <div class="avatar">${initials(c.name)}</div>
-      <div class="row-info"><div class="row-name">${c.name}</div><div class="row-sub">${c.vehicle||'No vehicle'} · ${cj.length} job${cj.length!==1?'s':''}</div></div>
-      <div class="row-right"><div class="row-value">${fmt(rev)}</div><span style="color:var(--muted);font-size:18px">›</span></div>
-    </div>`;
-  }).join('');
-}
-function viewClient(id) { viewingClientId=id; renderClientDetail(id); showPage('client-detail'); }
-function renderClientDetail(id) {
-  var c = getClientById(id); if(!c) return;
-  document.getElementById('cd-title').textContent=c.name;
-  document.getElementById('cd-vehicle').textContent=c.vehicle||'—';
-  document.getElementById('cd-phone').textContent=c.phone||'—';
-  document.getElementById('cd-email').textContent=c.email||'—';
-  document.getElementById('cd-followup').textContent=c.nextFollowupDate||'Not Set';
-  document.getElementById('cd-notes').textContent=c.notes||'—';
-  var cj = jobs.filter(j=>j.clientId===id);
-  document.getElementById('cd-jobs').innerHTML = cj.length
-    ? cj.map(j=>`<div class="job-row" onclick="viewJob(${j.id})" style="cursor:pointer"><div class="job-info"><div class="job-name">${j.service}</div><div class="job-meta">${j.date}</div></div><div class="job-right"><div class="job-price">${fmt(j.price)}</div><span class="badge ${statusBadge(j.status)}">${j.status}</span></div></div>`).join('')
-    : '<div class="empty-state"><div class="empty-text">No jobs for this client</div></div>';
-  renderCommLog(id);
-}
-function renderCommLog(clientId) {
-  var cl = comms.filter(c=>c.clientId===clientId).slice().reverse();
-  var el = document.getElementById('cd-comm-log');
-  if(!cl.length) { el.innerHTML='<div class="empty-state"><div class="empty-text">No communications logged yet</div></div>'; return; }
-  var iconMap={call:'📞',sms:'💬',note:'📝'};
-  el.innerHTML = cl.map(c=>`<div class="comm-item"><div class="comm-icon ${c.type}">${iconMap[c.type]||'📝'}</div><div class="comm-body"><div class="comm-type">${c.type}</div><div class="comm-msg">${c.body}</div><div class="comm-time">${c.ts}</div></div></div>`).join('');
-}
-async function logComm(clientId, type, body) {
-  var data = { client_id: clientId, type, body, ts: tsNow(), job_id: 0 };
-  try {
-    var row = await sbInsert('comms', data);
-    comms.push(mapComm(row));
-  } catch(err) {
-    comms.push({ id: Date.now(), clientId, type, body, ts: tsNow(), jobId: 0 });
-  }
-  saveCache();
-  if(currentPage==='client-detail') renderCommLog(clientId);
-  renderMessages();
-}
-async function logNote() {
-  var inp = document.getElementById('cd-note-input');
-  var txt = inp.value.trim(); if(!txt) return;
-  await logComm(viewingClientId, 'note', txt);
-  inp.value=''; showToast('✓ Note logged');
-}
-function confirmDeleteClient() {
-  var c = getClientById(viewingClientId); if(!c) return;
-  showConfirm('Delete "'+c.name+'"?', 'All jobs and communications will also be removed.', async function() {
-    try { await sbDelete('clients', viewingClientId); } catch(e) {}
-    jobs    = jobs.filter(j=>j.clientId!==viewingClientId);
-    comms   = comms.filter(cm=>cm.clientId!==viewingClientId);
-    clients = clients.filter(x=>x.id!==viewingClientId);
-    saveCache(); showToast('✓ Client deleted'); showPage('clients'); renderDashboard();
-  });
-}
-
 // ══════════════════════════════════════════════════════
 // OPERATION PRODUCTION PROCESSING ENGINE
 // ══════════════════════════════════════════════════════
+function openAddJob() {
+  document.getElementById('mj-id').value=''; document.getElementById('mj-title').textContent='New Job';
+  document.getElementById('mj-client-search').value=''; document.getElementById('mj-client-id').value='';
+  document.getElementById('mj-service').value=''; document.getElementById('mj-price').value='';
+  document.getElementById('mj-status').value='Lead'; document.getElementById('mj-date').value=today();
+  document.getElementById('mj-time').value='';
+  document.getElementById('mj-notes').value='';
+  populateYears(); populateMakes();
+  document.getElementById('mj-year').value='';
+  document.getElementById('mj-make').value='';
+  document.getElementById('mj-model').innerHTML='<option value="">Select model...</option>';
+  openModal('modal-job');
+}
+function openAddJobForClient() {
+  openAddJob();
+  var c=getClientById(viewingClientId); if(!c) return;
+  document.getElementById('mj-client-search').value=c.name;
+  document.getElementById('mj-client-id').value=c.id;
+  if(c.vehicle) {
+    var parts=c.vehicle.trim().split(' ');
+    if(parts.length>=3 && !isNaN(parts[0])) {
+      document.getElementById('mj-year').value=parts[0];
+      var make=parts[1];
+      document.getElementById('mj-make').value=make;
+      populateModels(make);
+      document.getElementById('mj-model').value=parts.slice(2).join(' ');
+    }
+  }
+}
+function editJob() {
+  var j=jobs.find(x=>x.id===viewingJobId); if(!j) return;
+  var c=getClientById(j.clientId);
+  document.getElementById('mj-id').value=j.id; document.getElementById('mj-title').textContent='Edit Job';
+  document.getElementById('mj-client-search').value=c?c.name:''; document.getElementById('mj-client-id').value=j.clientId;
+  document.getElementById('mj-service').value=j.service; document.getElementById('mj-price').value=j.price;
+  document.getElementById('mj-status').value=j.status; document.getElementById('mj-date').value=j.date||today();
+  document.getElementById('mj-time').value=j.appointmentTime||'';
+  document.getElementById('mj-notes').value=j.notes||'';
+  populateYears(); populateMakes();
+  document.getElementById('mj-year').value=j.vehicleYear||'';
+  document.getElementById('mj-make').value=j.vehicleMake||'';
+  populateModels(j.vehicleMake||'');
+  document.getElementById('mj-model').value=j.vehicleModel||'';
+  openModal('modal-job');
+}
 async function saveJob() {
   var clientId=parseInt(document.getElementById('mj-client-id').value);
   var service=document.getElementById('mj-service').value.trim();
@@ -1360,7 +1276,7 @@ function renderMore(){
 }
 
 // ══════════════════════════════════════════════════════
-// ANALYTICAL PERFORMANCE DASHBOARD COMPONENT
+// DASHBOARD (CHRONOLOGICAL UPCOMING SCHEDULE COMPONENT)
 // ══════════════════════════════════════════════════════
 function renderDashboard(){
   var rev=jobs.filter(j=>j.status==='Complete').reduce((s,j)=>s+j.price,0);
@@ -1402,21 +1318,6 @@ function renderDashboard(){
       </div>
     </div>`;
   }).join('') : '<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-text">No active appointments scheduled</div></div>';
-
-  // Render Follow-Up Reminders Feed
-  var dueFollowups = clients.filter(c => c.nextFollowupDate && c.nextFollowupDate <= today());
-  document.getElementById('d-followup-list').innerHTML = dueFollowups.length ? dueFollowups.map(c => `
-    <div class="list-row" onclick="viewClient(${c.id})" style="cursor:pointer">
-      <div class="avatar">${initials(c.name)}</div>
-      <div class="row-info">
-        <div class="row-name">${c.name}</div>
-        <div class="row-sub">📅 Follow-up due: ${c.nextFollowupDate}</div>
-      </div>
-      <div class="row-right">
-        <span style="color:var(--yellow); font-size:10px; font-weight:700; letter-spacing:1px; background:rgba(255,213,79,0.1); padding:3px 8px; border-radius:4px; border:1px solid rgba(255,213,79,0.2)">DUE</span>
-      </div>
-    </div>
-  `).join('') : '<div class="empty-state"><div class="empty-icon">🔔</div><div class="empty-text">No pending follow-ups due</div></div>';
 
   var cv=clients.map(c=>({c,total:jobs.filter(j=>j.clientId===c.id&&j.status==='Complete').reduce((s,j)=>s+j.price,0),count:jobs.filter(j=>j.clientId===c.id).length})).sort((a,b)=>b.total-a.total).slice(0,5);
   document.getElementById('d-top-clients').innerHTML=cv.length?cv.map(x=>`<div class="list-row" onclick="viewClient(${x.c.id})" style="cursor:pointer"><div class="avatar">${initials(x.c.name)}</div><div class="row-info"><div class="row-name">${x.c.name}</div><div class="row-sub">${x.c.vehicle||'No vehicle'} · ${x.count} job${x.count!==1?'s':''}</div></div><div class="row-right"><div class="row-value">${fmt(x.total)}</div></div></div>`).join(''):'<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">No clients yet</div></div>';
@@ -1614,7 +1515,7 @@ async function confirmCSVImport() {
 
 
 // ══════════════════════════════════════════════════════
-// VEHICLE DATA & DROPDOWNS
+// VEHICLE DATA SCHEMA
 // ══════════════════════════════════════════════════════
 var VEHICLE_DATA = {
   'Acura':['ILX','MDX','NSX','RDX','RLX','TL','TLX','TSX'],
@@ -1691,49 +1592,6 @@ function populateModels(preselect) {
 
 
 // ══════════════════════════════════════════════════════
-// DATE RANGE REPORT FILTER
-// ══════════════════════════════════════════════════════
-var currentRange = 'month';
-
-function setRange(range) {
-  currentRange = range;
-  document.querySelectorAll('.range-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('range-'+range).classList.add('active');
-  var cr = document.getElementById('custom-range');
-  if(range==='custom') {
-    cr.style.display='grid';
-    if(!document.getElementById('range-from').value) {
-      var now = new Date();
-      document.getElementById('range-from').value = new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10);
-      document.getElementById('range-to').value = now.toISOString().slice(0,10);
-    }
-  } else {
-    cr.style.display='none';
-  }
-  renderReports();
-}
-
-function getDateRange() {
-  var now = new Date();
-  var from, to;
-  to = new Date(now); to.setHours(23,59,59,999);
-  if(currentRange==='week') {
-    from = new Date(now); from.setDate(now.getDate()-6); from.setHours(0,0,0,0);
-  } else if(currentRange==='month') {
-    from = new Date(now.getFullYear(),now.getMonth(),1);
-  } else if(currentRange==='year') {
-    from = new Date(now.getFullYear(),0,1);
-  } else {
-    var fv = document.getElementById('range-from').value;
-    var tv = document.getElementById('range-to').value;
-    from = fv ? new Date(fv) : new Date(now.getFullYear(),0,1);
-    to   = tv ? new Date(tv) : now;
-    to.setHours(23,59,59,999);
-  }
-  return {from, to};
-}
-
-// ══════════════════════════════════════════════════════
 // NEW LEAD CAPTURE
 // ══════════════════════════════════════════════════════
 function openNewLeadModal() {
@@ -1748,6 +1606,7 @@ function openNewLeadModal() {
   var cur=new Date().getFullYear();
   yearSel.innerHTML='<option value="">Select year...</option>';
   for(var y=cur+1;y>=1990;y--) yearSel.innerHTML+=`<option value="${y}">${y}</option>`;
+  makeSel.innerHTML='<option value="${m}"></option>';
   makeSel.innerHTML='<option value="">Select make...</option>';
   Object.keys(VEHICLE_DATA).sort().forEach(m=>makeSel.innerHTML+=`<option value="${m}">${m}</option>`);
   document.getElementById('nl-model').innerHTML='<option value="">Select model...</option>';
