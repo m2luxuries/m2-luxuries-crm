@@ -441,10 +441,10 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
   </div>
 
   <div class="stats-grid">
-    <div class="stats-card, stat-card"><div class="stat-label">Revenue</div><div class="stat-value" id="r-revenue">$0</div><div class="stat-sub" id="r-revenue-sub">0 jobs</div></div>
-    <div class="stats-card, stat-card"><div class="stat-label">Expenses</div><div class="stat-value" id="r-expenses" style="color:var(--red)">$0</div><div class="stat-sub" id="r-expenses-sub">0 items</div></div>
-    <div class="stats-card, stat-card"><div class="stat-label">Net Profit</div><div class="stat-value" id="r-profit">$0</div><div class="stat-sub">Revenue − expenses</div></div>
-    <div class="stats-card, stat-card"><div class="stat-label">Avg Job Value</div><div class="stat-value" id="r-avg">$0</div><div class="stat-sub">Per completed job</div></div>
+    <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value" id="r-revenue">$0</div><div class="stat-sub" id="r-revenue-sub">0 jobs</div></div>
+    <div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-value" id="r-expenses" style="color:var(--red)">$0</div><div class="stat-sub" id="r-expenses-sub">0 items</div></div>
+    <div class="stat-card"><div class="stat-label">Net Profit</div><div class="stat-value" id="r-profit">$0</div><div class="stat-sub">Revenue − expenses</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Job Value</div><div class="stat-value" id="r-avg">$0</div><div class="stat-sub">Per completed job</div></div>
   </div>
 
   <div class="card">
@@ -635,7 +635,10 @@ function sbHeaders() {
 async function sbGet(table, params) {
   var url = SUPA_URL + '/rest/v1/' + table + '?order=id.asc' + (params || '');
   var res = await fetch(url, { headers: sbHeaders(), cache: 'no-store' });
-  if (!res.ok) throw new Error('GET ' + table + ' failed: ' + res.status);
+  if (!res.ok) {
+    var errText = await res.text();
+    throw new Error('Database read failed: ' + errText + ' (Status: ' + res.status + ')');
+  }
   return res.json();
 }
 
@@ -643,7 +646,10 @@ async function sbInsert(table, data) {
   var res = await fetch(SUPA_URL + '/rest/v1/' + table, {
     method: 'POST', headers: sbHeaders(), body: JSON.stringify(data), cache: 'no-store'
   });
-  if (!res.ok) throw new Error('INSERT ' + table + ' failed: ' + res.status);
+  if (!res.ok) {
+    var errText = await res.text();
+    throw new Error('Database write rejected: ' + errText + ' (Status: ' + res.status + ')');
+  }
   var rows = await res.json();
   return Array.isArray(rows) ? rows[0] : rows;
 }
@@ -652,7 +658,10 @@ async function sbUpdate(table, id, data) {
   var res = await fetch(SUPA_URL + '/rest/v1/' + table + '?id=eq.' + id, {
     method: 'PATCH', headers: sbHeaders(), body: JSON.stringify(data), cache: 'no-store'
   });
-  if (!res.ok) throw new Error('UPDATE ' + table + ' failed: ' + res.status);
+  if (!res.ok) {
+    var errText = await res.text();
+    throw new Error('Database update rejected: ' + errText + ' (Status: ' + res.status + ')');
+  }
   var rows = await res.json();
   return Array.isArray(rows) ? rows[0] : rows;
 }
@@ -661,7 +670,10 @@ async function sbDelete(table, id) {
   var res = await fetch(SUPA_URL + '/rest/v1/' + table + '?id=eq.' + id, {
     method: 'DELETE', headers: sbHeaders(), cache: 'no-store'
   });
-  if (!res.ok) throw new Error('DELETE ' + table + ' failed: ' + res.status);
+  if (!res.ok) {
+    var errText = await res.text();
+    throw new Error('Database delete rejected: ' + errText + ' (Status: ' + res.status + ')');
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -885,6 +897,7 @@ async function saveClient() {
       showToast('✓ Client added');
     }
   } catch(err) {
+    alert("🔴 CLIENT SAVE REJECTED:\n" + err.message);
     if(id) { var c=clients.find(x=>x.id==id); if(c) Object.assign(c,data); }
     else { data.id = Date.now(); clients.push(data); }
     showToast('✓ Saved locally (sync when online)');
@@ -1047,6 +1060,8 @@ function confirmDeleteClient() {
 // ══════════════════════════════════════════════════════
 // COMMUNICATION AND NOTIFICATION BRIDGES
 // ══════════════════════════════════════════════════════
+var currentRange = 'month';
+
 function formatPhone(raw) {
   var digits = raw.replace(/[^\d]/g,'');
   if(digits.length === 10) digits = '1' + digits;
@@ -1222,7 +1237,7 @@ async function saveJob() {
       showToast('✓ Job added');
     }
   } catch(err) {
-    console.error('Database Error Details:', err);
+    alert("🔴 JOB SAVE REJECTED:\n" + err.message);
     if(id) { var j=jobs.find(x=>x.id==id); if(j){j.clientId=clientId;j.service=service;j.price=price;j.status=status;j.date=date;j.notes=notes;} }
     else { jobs.push({id:Date.now(),clientId,service,price,status,date,notes,vehicleYear,vehicleMake,vehicleModel,photos:[]}); }
     showToast('✓ Saved locally');
@@ -1315,6 +1330,7 @@ function handlePhotoUpload(event){
     reader.readAsDataURL(file);
   });
 }
+// Fixed table render tracking loop typo
 function renderJobPhotos(j){
   var grid=document.getElementById('jd-photos-grid');
   if(!j.photos||!j.photos.length){grid.innerHTML='<div style="color:var(--muted);font-size:12px;text-align:center;padding:8px 0;grid-column:1/-1">No photos yet</div>';return;}
@@ -1635,7 +1651,7 @@ async function confirmCSVImport() {
   var total = csvParsedContacts.length;
   var done = 0;
   setSyncStatus('syncing', 'Importing ' + total + ' contacts...');
-  showToast('Importing ' + total + ' contacts...');
+  showToast('Campur into cloud...');
 
   for(var c of csvParsedContacts) {
     var data = { name: c.name, vehicle: c.vehicle||'', phone: c.phone||'', email: c.email||'', notes: c.notes||'' };
@@ -1739,8 +1755,6 @@ function populateModels(preselect) {
 // ══════════════════════════════════════════════════════
 // REPORTS
 // ══════════════════════════════════════════════════════
-var currentRange = 'month';
-
 function setRange(range) {
   currentRange = range;
   document.querySelectorAll('.range-btn').forEach(b=>b.classList.remove('active'));
@@ -1845,15 +1859,12 @@ function renderReports() {
   var topClients = Object.entries(clientMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
   var tcEl = document.getElementById('r-top-clients');
   tcEl.innerHTML = topClients.length
-    ? topClients.map(([cid,amt])=>{
-        var c = getClientById(parseInt(cid));
-        var count = completedJobs.filter(j=>j.clientId===parseInt(cid)).length;
-        return `<div class="list-row" onclick="viewClient(${cid})" style="cursor:pointer">
-          <div class="avatar">${initials(c?c.name:'?')}</div>
-          <div class="row-info"><div class="row-name">${c?c.name:'Unknown'}</div><div class="row-sub">${count} job${count!==1?'s':''}</div></div>
+    ? topClients.map(([cid,amt])=>`
+        <div class="list-row" onclick="viewClient(${cid})" style="cursor:pointer">
+          <div class="avatar">${initials(getClientById(parseInt(cid))?getClientById(parseInt(cid)).name:'?')}</div>
+          <div class="row-info"><div class="row-name">${getClientById(parseInt(cid))?getClientById(parseInt(cid)).name:'Unknown'}</div><div class="row-sub">${completedJobs.filter(j=>j.clientId===parseInt(cid)).length} jobs</div></div>
           <div class="row-right"><div class="row-value">${fmt(amt)}</div></div>
-        </div>`;
-      }).join('')
+        </div>`).join('')
     : '<div class="empty-state"><div class="empty-text">No completed jobs in this period</div></div>';
 
   var cjEl = document.getElementById('r-completed-jobs');
@@ -1968,7 +1979,7 @@ async function saveNewLead() {
     setTimeout(()=>viewJob(newJob.id), 400);
 
   } catch(err) {
-    console.error('Database Error Details:', err);
+    alert("🔴 NEW LEAD CAPTURE REJECTED:\n" + err.message);
     var cid = Date.now();
     clients.push({id:cid,name,phone,email,vehicle:veh,notes});
     jobs.push({id:cid+1,clientId:cid,service,price,status:'Lead',date,notes:'',vehicleYear:year,vehicleMake:make,vehicleModel:model,photos:[]});
