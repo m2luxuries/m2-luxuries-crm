@@ -32,7 +32,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:15px;position:relative;overflow:hidden;}
 .stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:var(--border2);}
 .stat-label{font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:5px;}
-.text-value,.stat-value{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--text);line-height:1;}
+.stat-value{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--text);line-height:1;}
 .stat-sub{font-size:10px;color:var(--muted);margin-top:3px;}
 .page-hdr{display:flex;align-items:flex-start;justify-content:space-between;}
 .page-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;}
@@ -205,36 +205,6 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 .lead-step{flex:1;height:3px;border-radius:3px;background:var(--border);}
 .lead-step.done{background:var(--green);}
 .lead-step.active{background:var(--text);}
-.recur-dot{position:absolute;bottom:-1px;right:-1px;width:12px;height:12px;border-radius:50%;border:2px solid var(--surface);font-size:7px;display:flex;align-items:center;justify-content:center;}
-.recur-dot.on-track{background:var(--green);}
-.recur-dot.due-soon{background:var(--yellow);}
-.recur-dot.overdue{background:var(--red);}
-.avatar{position:relative;}
-.recur-banner{border-radius:12px;padding:12px 14px;margin-bottom:4px;display:flex;align-items:center;gap:10px;}
-.recur-banner.overdue{background:rgba(244,67,54,.1);border:1px solid rgba(244,67,54,.25);}
-.recur-banner.due-soon{background:rgba(255,213,79,.08);border:1px solid rgba(255,213,79,.25);}
-.recur-rebook-btn{padding:8px 14px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:var(--text);color:#000;flex-shrink:0;}
-.recur-banner-icon{font-size:22px;flex-shrink:0;}
-.recur-banner-body{flex:1;min-width:0;}
-.recur-banner-title{font-size:13px;font-weight:700;}
-.recur-banner-sub{font-size:11px;color:var(--muted);margin-top:2px;}
-.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
-.toggle-label{font-size:14px;font-weight:500;}
-.toggle-sub{font-size:11px;color:var(--muted);margin-top:2px;}
-.toggle-switch{width:44px;height:24px;border-radius:12px;background:var(--border2);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;}
-.toggle-switch.on{background:var(--green);}
-.toggle-switch::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left .2s;}
-.toggle-switch.on::after{left:23px;}
-.vip-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(204,218,70,.15);color:#CCDA46;border:1px solid rgba(204,218,70,.3);margin-left:6px;}
-.badge-overdue{background:rgba(244,67,54,.15);color:var(--red);border:1px solid rgba(244,67,54,.3);}
-.badge-due-soon{background:rgba(255,213,79,.15);color:var(--yellow);border:1px solid rgba(255,213,79,.3);}
-.lifetime-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;margin-bottom:4px;}
-.lifetime-stat{display:flex;justify-content:space-between;align-items:center;font-size:13px;}
-.lifetime-val{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#CCDA46;}
-.attention-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
-.attention-row:last-child{border-bottom:none;padding-bottom:0;}
-.attention-name{font-size:13px;font-weight:600;}
-.attention-sub{font-size:11px;color:var(--muted);margin-top:2px;}
 .loading-screen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
 .loading-logo{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:2px;}
 .loading-sub{font-size:13px;color:var(--muted);}
@@ -242,6 +212,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 @keyframes spin{to{transform:rotate(360deg);}}
 </style>
 
+<!-- LOADING SCREEN -->
 <div class="loading-screen" id="loading-screen">
   <div class="loading-logo">M2 LUXURIES</div>
   <div class="spinner"></div>
@@ -257,6 +228,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
   </div>
 </header>
 
+<!-- DASHBOARD -->
 <div class="page active" id="page-dashboard">
   <div class="stats-grid">
     <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value" id="d-revenue">$0</div><div class="stat-sub">Completed jobs</div></div>
@@ -264,8 +236,9 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="stat-card"><div class="stat-label">Net Profit</div><div class="stat-value" id="d-profit">$0</div><div class="stat-sub">Revenue − expenses</div></div>
     <div class="stat-card"><div class="stat-label">New Leads</div><div class="stat-value" id="d-leads">0</div><div class="stat-sub">Need follow-up</div></div>
   </div>
+  <!-- Status tiles on dashboard — tap to jump to pipeline filtered -->
   <div class="status-grid">
-    <div class="status-tile lead"      onclick="showPage('pipeline');filterPipeline('Lead')">       <div class="status-tile-num" id="sb-lead">0</div>     <div class="status-tile-lbl">Lead</div></div>
+    <div class="status-tile lead"     onclick="showPage('pipeline');filterPipeline('Lead')">       <div class="status-tile-num" id="sb-lead">0</div>     <div class="status-tile-lbl">Lead</div></div>
     <div class="status-tile quoted"   onclick="showPage('pipeline');filterPipeline('Quoted')">     <div class="status-tile-num" id="sb-quoted">0</div>   <div class="status-tile-lbl">Quoted</div></div>
     <div class="status-tile booked"   onclick="showPage('pipeline');filterPipeline('Booked')">     <div class="status-tile-num" id="sb-booked">0</div>   <div class="status-tile-lbl">Booked</div></div>
     <div class="status-tile progress" onclick="showPage('pipeline');filterPipeline('In Progress')"><div class="status-tile-num" id="sb-progress">0</div> <div class="status-tile-lbl">In Prog</div></div>
@@ -275,11 +248,13 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
   <div class="card"><div class="section-title">Top Clients by Value</div><div id="d-top-clients"><div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">No clients yet</div></div></div></div>
 </div>
 
+<!-- CLIENTS -->
 <div class="page" id="page-clients">
   <div class="page-hdr">
     <div><div class="page-title">Clients</div><div class="page-sub" id="clients-sub">0 clients</div></div>
     <button class="bulk-mode-btn" id="bulk-toggle-btn" onclick="toggleBulkMode()">Select</button>
   </div>
+  <!-- Bulk action bar (shown in select mode) -->
   <div class="bulk-bar hidden" id="bulk-bar">
     <span class="bulk-count" id="bulk-count">0 selected</span>
     <div class="bulk-actions">
@@ -292,6 +267,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
   <div class="card"><div id="clients-list"><div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">No clients yet.</div></div></div></div>
 </div>
 
+<!-- CLIENT DETAIL -->
 <div class="page" id="page-client-detail">
   <div class="detail-header">
     <button class="back-btn" onclick="showPage('clients')">← Back</button>
@@ -321,12 +297,14 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
   </div>
 </div>
 
+<!-- JOBS -->
 <div class="page" id="page-jobs">
   <div class="page-hdr"><div><div class="page-title">Jobs</div><div class="page-sub" id="jobs-sub">0 jobs</div></div></div>
   <div class="search-wrap"><span class="search-icon">🔍</span><input class="search-bar" placeholder="Search jobs..." oninput="renderJobs(this.value)"></div>
   <div class="card"><div id="jobs-list"><div class="empty-state"><div class="empty-icon">🚗</div><div class="empty-text">No jobs yet.</div></div></div></div>
 </div>
 
+<!-- JOB DETAIL -->
 <div class="page" id="page-job-detail">
   <div class="detail-header">
     <button class="back-btn" onclick="showPage('jobs')">← Back</button>
@@ -360,11 +338,13 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
   </div>
 </div>
 
+<!-- PIPELINE -->
 <div class="page" id="page-pipeline">
   <div class="page-hdr">
     <div><div class="page-title">Pipeline</div><div class="page-sub">All job stages</div></div>
     <button class="new-lead-btn" onclick="openNewLeadModal()">＋ New Lead</button>
   </div>
+  <!-- Status count tiles -->
   <div class="status-grid">
     <div class="status-tile lead"     onclick="filterPipeline('Lead')">       <div class="status-tile-num" id="pt-lead">0</div>     <div class="status-tile-lbl">Lead</div></div>
     <div class="status-tile quoted"   onclick="filterPipeline('Quoted')">     <div class="status-tile-num" id="pt-quoted">0</div>   <div class="status-tile-lbl">Quoted</div></div>
@@ -375,15 +355,17 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
   <div class="card"><div id="pipeline-content"></div></div>
 </div>
 
+<!-- MESSAGES -->
 <div class="page" id="page-messages">
   <div class="page-hdr"><div><div class="page-title">Messages</div><div class="page-sub">Templates &amp; communication log</div></div></div>
   <div class="card"><div class="section-title">Recent Communications</div><div id="msg-recent-log"><div class="empty-state"><div class="empty-icon">💬</div><div class="empty-text">No communications yet.</div></div></div></div>
   <div class="card"><div class="section-title">Message Templates</div><div class="template-grid" id="templates-list"></div></div>
 </div>
 
+<!-- MORE -->
 <div class="page" id="page-more">
   <div class="page-hdr"><div><div class="page-title">More</div><div class="page-sub">Expenses &amp; settings</div></div></div>
-  <div class="card"><div class="section-title">Expenses</div><div id="expenses-list"><div class="empty-state"><div class="empty-icon">💸</div><div class="empty-text">No expenses yet. Tap + Exp.</div></div></div></div>
+  <div class="card"><div class="section-title">Expenses</div><div id="expenses-list"><div class="empty-state"><div class="empty-icon">💸</div><div class="empty-text">No expenses yet.</div></div></div></div>
   <div class="card">
     <div class="section-title">Financial Summary</div>
     <div class="sum-row"><span class="sum-lbl">Total Revenue</span><span class="sum-pos" id="sum-rev">$0</span></div>
@@ -421,9 +403,11 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 </div>
 
 
+<!-- REPORTS -->
 <div class="page" id="page-reports">
   <div class="page-hdr"><div><div class="page-title">Reports</div><div class="page-sub">Revenue, expenses &amp; profit</div></div></div>
 
+  <!-- Date range filter -->
   <div class="card" style="padding:12px 14px;">
     <div class="section-title">Date Range</div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px;">
@@ -439,6 +423,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div style="font-size:11px;color:var(--muted);margin-top:8px;" id="range-label"></div>
   </div>
 
+  <!-- KPI Cards -->
   <div class="stats-grid">
     <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value" id="r-revenue">$0</div><div class="stat-sub" id="r-revenue-sub">0 jobs</div></div>
     <div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-value" id="r-expenses" style="color:var(--red)">$0</div><div class="stat-sub" id="r-expenses-sub">0 items</div></div>
@@ -446,26 +431,31 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="stat-card"><div class="stat-label">Avg Job Value</div><div class="stat-value" id="r-avg">$0</div><div class="stat-sub">Per completed job</div></div>
   </div>
 
+  <!-- Revenue by Service -->
   <div class="card">
     <div class="section-title">Revenue by Service</div>
     <div id="r-by-service"><div class="empty-state"><div class="empty-text">No completed jobs in this period</div></div></div>
   </div>
 
+  <!-- Expenses by Category -->
   <div class="card">
     <div class="section-title">Expenses by Category</div>
     <div id="r-by-category"><div class="empty-state"><div class="empty-text">No expenses in this period</div></div></div>
   </div>
 
+  <!-- Top Clients -->
   <div class="card">
     <div class="section-title">Top Clients This Period</div>
     <div id="r-top-clients"><div class="empty-state"><div class="empty-text">No completed jobs in this period</div></div></div>
   </div>
 
+  <!-- Completed Jobs List -->
   <div class="card">
     <div class="section-title">Completed Jobs</div>
     <div id="r-completed-jobs"><div class="empty-state"><div class="empty-text">No completed jobs in this period</div></div></div>
   </div>
 
+  <!-- Messages shortcut -->
   <div class="card" style="cursor:pointer;" onclick="showPage('messages')">
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <div><div style="font-size:14px;font-weight:600;">💬 Messages &amp; Templates</div><div style="font-size:11px;color:var(--muted);margin-top:3px;">View communication log &amp; send templates</div></div>
@@ -491,6 +481,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
   <div class="nav-item" id="nav-reports" onclick="showPage('reports')"><span class="nav-icon">📑</span>Reports</div>
 </nav>
 
+<!-- MODALS -->
 <div class="overlay" id="modal-client">
   <div class="modal">
     <div class="modal-title" id="mc-title">New Client</div>
@@ -633,14 +624,14 @@ function sbHeaders() {
 
 async function sbGet(table, params) {
   var url = SUPA_URL + '/rest/v1/' + table + '?order=id.asc' + (params || '');
-  var res = await fetch(url, { headers: sbHeaders(), cache: 'no-store' });
+  var res = await fetch(url, { headers: sbHeaders() });
   if (!res.ok) throw new Error('GET ' + table + ' failed: ' + res.status);
   return res.json();
 }
 
 async function sbInsert(table, data) {
   var res = await fetch(SUPA_URL + '/rest/v1/' + table, {
-    method: 'POST', headers: sbHeaders(), body: JSON.stringify(data), cache: 'no-store'
+    method: 'POST', headers: sbHeaders(), body: JSON.stringify(data)
   });
   if (!res.ok) throw new Error('INSERT ' + table + ' failed: ' + res.status);
   var rows = await res.json();
@@ -649,7 +640,7 @@ async function sbInsert(table, data) {
 
 async function sbUpdate(table, id, data) {
   var res = await fetch(SUPA_URL + '/rest/v1/' + table + '?id=eq.' + id, {
-    method: 'PATCH', headers: sbHeaders(), body: JSON.stringify(data), cache: 'no-store'
+    method: 'PATCH', headers: sbHeaders(), body: JSON.stringify(data)
   });
   if (!res.ok) throw new Error('UPDATE ' + table + ' failed: ' + res.status);
   var rows = await res.json();
@@ -658,7 +649,7 @@ async function sbUpdate(table, id, data) {
 
 async function sbDelete(table, id) {
   var res = await fetch(SUPA_URL + '/rest/v1/' + table + '?id=eq.' + id, {
-    method: 'DELETE', headers: sbHeaders(), cache: 'no-store'
+    method: 'DELETE', headers: sbHeaders()
   });
   if (!res.ok) throw new Error('DELETE ' + table + ' failed: ' + res.status);
 }
@@ -721,15 +712,10 @@ async function fullSync() {
       sbGet('expenses'),
       sbGet('comms')
     ]);
-    
-    var localClients = clients.filter(x => x.id > 1000000000000);
-    var localJobs = jobs.filter(x => x.id > 1000000000000);
-
-    clients  = [...c.map(mapClient), ...localClients];
-    jobs     = [...j.map(mapJob), ...localJobs];
+    clients  = c.map(mapClient);
+    jobs     = j.map(mapJob);
     expenses = e.map(mapExpense);
     comms    = cm.map(mapComm);
-    
     saveCache();
     setSyncStatus('online', 'Last synced: ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
     refreshCurrentPage();
@@ -741,6 +727,7 @@ async function fullSync() {
   }
 }
 
+// Map Supabase snake_case → app camelCase
 function mapClient(r) { return { id: r.id, name: r.name||'', vehicle: r.vehicle||'', phone: r.phone||'', email: r.email||'', notes: r.notes||'' }; }
 function mapJob(r)    { return { id: r.id, clientId: r.client_id, service: r.service||'', price: parseFloat(r.price)||0, status: r.status||'Lead', date: r.date||'', notes: r.notes||'', vehicleYear: r.vehicle_year||'', vehicleMake: r.vehicle_make||'', vehicleModel: r.vehicle_model||'', photos: [] }; }
 function mapExpense(r){ return { id: r.id, name: r.name||'', cat: r.cat||'Other', amount: parseFloat(r.amount)||0, date: r.date||'', notes: r.notes||'' }; }
@@ -853,6 +840,7 @@ async function saveClient() {
       showToast('✓ Client added');
     }
   } catch(err) {
+    // offline fallback
     if(id) { var c=clients.find(x=>x.id==id); if(c) Object.assign(c,data); }
     else { data.id = Date.now(); clients.push(data); }
     showToast('✓ Saved locally (sync when online)');
@@ -860,6 +848,7 @@ async function saveClient() {
   saveCache(); renderDashboard();
   if(currentPage==='clients') renderClients();
 }
+// ── BULK SELECT STATE ──
 var bulkMode = false;
 var bulkSelected = new Set();
 
@@ -884,6 +873,7 @@ function toggleSelectClient(id, e) {
   if(bulkSelected.has(id)) bulkSelected.delete(id);
   else bulkSelected.add(id);
   updateBulkCount();
+  // Update just this row's checkbox visually
   var cb = document.getElementById('cb-'+id);
   if(cb) {
     if(bulkSelected.has(id)) { cb.classList.add('checked'); cb.textContent='✓'; }
@@ -1015,14 +1005,18 @@ function confirmDeleteClient() {
 // ══════════════════════════════════════════════════════
 // CALL & SMS
 // ══════════════════════════════════════════════════════
+// Format phone for Android & iPhone compatibility
 function formatPhone(raw) {
+  // Strip everything except digits and leading +
   var digits = raw.replace(/[^\d]/g,'');
+  // Add country code if missing (assume US +1)
   if(digits.length === 10) digits = '1' + digits;
   return '+' + digits;
 }
 function formatSmsUrl(phone, msg) {
   var num = formatPhone(phone);
   var isAndroid = /android/i.test(navigator.userAgent);
+  // Android uses semicolon separator & ?body=, iOS uses &body=
   if(isAndroid) {
     return 'sms:' + num + '?body=' + encodeURIComponent(msg);
   }
@@ -1126,6 +1120,7 @@ function openAddJobForClient() {
   var c=getClientById(viewingClientId); if(!c) return;
   document.getElementById('mj-client-search').value=c.name;
   document.getElementById('mj-client-id').value=c.id;
+  // Pre-fill vehicle from client profile if available
   if(c.vehicle) {
     var parts=c.vehicle.trim().split(' ');
     if(parts.length>=3 && !isNaN(parts[0])) {
@@ -1145,6 +1140,7 @@ function editJob() {
   document.getElementById('mj-service').value=j.service; document.getElementById('mj-price').value=j.price;
   document.getElementById('mj-status').value=j.status; document.getElementById('mj-date').value=j.date||today();
   document.getElementById('mj-notes').value=j.notes||'';
+  // Restore vehicle fields
   populateYears(); populateMakes();
   document.getElementById('mj-year').value=j.vehicleYear||'';
   document.getElementById('mj-make').value=j.vehicleMake||'';
@@ -1164,6 +1160,8 @@ async function saveJob() {
   var vehicleYear=document.getElementById('mj-year').value;
   var vehicleMake=document.getElementById('mj-make').value;
   var vehicleModel=document.getElementById('mj-model').value;
+  // Build vehicle string for display e.g. "2023 Toyota Camry"
+  var vehicleStr=[vehicleYear,vehicleMake,vehicleModel].filter(Boolean).join(' ');
   var id=document.getElementById('mj-id').value;
   var sbData={client_id:clientId,service,price,status,date,notes,vehicle_year:vehicleYear,vehicle_make:vehicleMake,vehicle_model:vehicleModel};
   closeModal('modal-job');
@@ -1287,7 +1285,8 @@ function deletePhoto(idx){
 var pipelineFilter = null;
 
 function filterPipeline(status) {
-  pipelineFilter = (pipelineFilter === status) ? null : status;
+  pipelineFilter = (pipelineFilter === status) ? null : status; // toggle
+  // highlight active tile
   document.querySelectorAll('.status-tile').forEach(t=>t.style.opacity='1');
   if(pipelineFilter) {
     document.querySelectorAll('.status-tile').forEach(t=>{
@@ -1300,6 +1299,7 @@ function filterPipeline(status) {
 }
 
 function renderPipeline(){
+  // Update tile counts
   var allStatuses = ['Lead','Quoted','Booked','In Progress','Complete'];
   var keys = ['lead','quoted','booked','progress','complete'];
   allStatuses.forEach((s,i) => {
@@ -1443,6 +1443,7 @@ async function importData(event){
       var toImportJobs=d.jobs||[];
       var toImportExpenses=d.expenses||[];
       var toImportComms=d.comms||[];
+      // Push to Supabase
       showToast('Importing to cloud...');
       setSyncStatus('syncing','Importing...');
       for(var c of toImportClients){
@@ -1511,11 +1512,14 @@ function importCSV(event) {
 }
 
 function parseCSV(text) {
+  // Normalize line endings
   var lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l=>l.trim());
   if(lines.length < 2) return [];
 
+  // Parse header row — handle quoted fields
   var headers = parseCSVRow(lines[0]).map(h=>h.trim().toLowerCase());
 
+  // Column mapping — handles Google Contacts, iPhone, and custom formats
   function findCol(names) {
     for(var n of names) { var i=headers.indexOf(n); if(i>-1) return i; }
     return -1;
@@ -1534,6 +1538,7 @@ function parseCSV(text) {
     var row = parseCSVRow(lines[i]);
     if(!row.length || row.every(c=>!c.trim())) continue;
 
+    // Build name
     var name = '';
     if(colName > -1 && row[colName] && row[colName].trim()) {
       name = row[colName].trim();
@@ -1542,8 +1547,9 @@ function parseCSV(text) {
       var ln = colLast>-1  ? (row[colLast]||'').trim()  : '';
       name = [fn,ln].filter(Boolean).join(' ');
     }
-    if(!name) continue;
+    if(!name) continue; // skip rows with no name
 
+    // Build phone — prefer mobile
     var phone = '';
     if(colPhone>-1 && row[colPhone]) phone = row[colPhone].trim();
     else if(colPhone2>-1 && row[colPhone2]) phone = row[colPhone2].trim();
@@ -1560,6 +1566,7 @@ function parseCSV(text) {
 }
 
 function parseCSVRow(line) {
+  // Handles quoted fields with commas inside
   var result = [], cur = '', inQuote = false;
   for(var i=0; i<line.length; i++) {
     var ch = line[i];
@@ -1599,6 +1606,7 @@ async function confirmCSVImport() {
       var row = await sbInsert('clients', data);
       clients.push(mapClient(row));
     } catch(err) {
+      // offline fallback
       data.id = Date.now() + Math.random();
       clients.push(data);
     }
@@ -1704,6 +1712,7 @@ function setRange(range) {
   var cr = document.getElementById('custom-range');
   if(range==='custom') {
     cr.style.display='grid';
+    // default to this month if not set
     if(!document.getElementById('range-from').value) {
       var now = new Date();
       document.getElementById('range-from').value = new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10);
@@ -1743,10 +1752,13 @@ function inRange(dateStr, from, to) {
 
 function renderReports() {
   var {from, to} = getDateRange();
+
+  // Update label
   var opts = {month:'short',day:'numeric',year:'numeric'};
   document.getElementById('range-label').textContent =
     from.toLocaleDateString([],opts) + ' — ' + to.toLocaleDateString([],opts);
 
+  // Filter data
   var completedJobs = jobs.filter(j=>j.status==='Complete' && inRange(j.date,from,to));
   var periodExpenses = expenses.filter(e=>inRange(e.date,from,to));
 
@@ -1755,6 +1767,7 @@ function renderReports() {
   var profit = revenue - expTotal;
   var avg = completedJobs.length ? revenue/completedJobs.length : 0;
 
+  // KPIs
   document.getElementById('r-revenue').textContent = fmt(revenue);
   document.getElementById('r-revenue-sub').textContent = completedJobs.length+' job'+(completedJobs.length!==1?'s':'');
   document.getElementById('r-expenses').textContent = fmt(expTotal);
@@ -1764,6 +1777,7 @@ function renderReports() {
   rp.style.color = profit >= 0 ? 'var(--text)' : 'var(--red)';
   document.getElementById('r-avg').textContent = fmt(avg);
 
+  // Revenue by service
   var byService = {};
   completedJobs.forEach(j=>{
     byService[j.service] = (byService[j.service]||0) + j.price;
@@ -1779,6 +1793,7 @@ function renderReports() {
         </div>`).join('')
     : '<div class="empty-state"><div class="empty-text">No completed jobs in this period</div></div>';
 
+  // Expenses by category
   var byCat = {};
   periodExpenses.forEach(e=>{
     byCat[e.cat] = (byCat[e.cat]||0) + e.amount;
@@ -1794,6 +1809,7 @@ function renderReports() {
         </div>`).join('')
     : '<div class="empty-state"><div class="empty-text">No expenses in this period</div></div>';
 
+  // Top clients
   var clientMap = {};
   completedJobs.forEach(j=>{
     clientMap[j.clientId] = (clientMap[j.clientId]||0) + j.price;
@@ -1812,6 +1828,7 @@ function renderReports() {
       }).join('')
     : '<div class="empty-state"><div class="empty-text">No completed jobs in this period</div></div>';
 
+  // Completed jobs list
   var cjEl = document.getElementById('r-completed-jobs');
   cjEl.innerHTML = completedJobs.length
     ? completedJobs.slice().reverse().map(j=>{
@@ -1834,11 +1851,13 @@ function renderReports() {
 // NEW LEAD CAPTURE
 // ══════════════════════════════════════════════════════
 function openNewLeadModal() {
+  // Reset all fields
   ['nl-name','nl-phone','nl-email','nl-notes','nl-price'].forEach(id=>{
     var el=document.getElementById(id); if(el) el.value='';
   });
   document.getElementById('nl-service').value='';
   document.getElementById('nl-date').value=today();
+  // Populate vehicle dropdowns
   var yearSel=document.getElementById('nl-year');
   var makeSel=document.getElementById('nl-make');
   var cur=new Date().getFullYear();
@@ -1847,6 +1866,7 @@ function openNewLeadModal() {
   makeSel.innerHTML='<option value="">Select make...</option>';
   Object.keys(VEHICLE_DATA).sort().forEach(m=>makeSel.innerHTML+=`<option value="${m}">${m}</option>`);
   document.getElementById('nl-model').innerHTML='<option value="">Select model...</option>';
+  // Show step 1
   document.getElementById('lead-step-1').style.display='block';
   document.getElementById('lead-step-2').style.display='none';
   document.getElementById('lstep-1').className='lead-step active';
@@ -1897,20 +1917,15 @@ async function saveNewLead() {
   setSyncStatus('syncing','Saving lead...');
 
   try {
+    // 1. Create client
     var clientRow = await sbInsert('clients',{name,phone,email,vehicle:veh,notes});
     var newClient = mapClient(clientRow);
     clients.push(newClient);
 
+    // 2. Create job as Lead
     var jobRow = await sbInsert('jobs',{
-      client_id: newClient.id, 
-      service, 
-      price, 
-      status: 'Lead',
-      date, 
-      notes: '', 
-      vehicle_year: year ? parseInt(year) : null, 
-      vehicle_make: make || null, 
-      vehicle_model: model || null
+      client_id:newClient.id, service, price, status:'Lead',
+      date, notes:'', vehicle_year:year, vehicle_make:make, vehicle_model:model
     });
     var newJob = mapJob(jobRow);
     jobs.push(newJob);
@@ -1920,17 +1935,17 @@ async function saveNewLead() {
     showToast('🎯 Lead captured — '+name);
     renderDashboard();
     renderPipeline();
-    
+    // Open the new job so they can act on it right away
     setTimeout(()=>viewJob(newJob.id), 400);
 
   } catch(err) {
-    console.error('Database Error Details:', err);
+    // Offline fallback
     var cid = Date.now();
     clients.push({id:cid,name,phone,email,vehicle:veh,notes});
     jobs.push({id:cid+1,clientId:cid,service,price,status:'Lead',date,notes:'',vehicleYear:year,vehicleMake:make,vehicleModel:model,photos:[]});
     saveCache();
     setSyncStatus('offline','Saved locally');
-    showToast('⚠️ Cloud save failed — preserved locally');
+    showToast('🎯 Lead saved locally');
     renderDashboard(); renderPipeline();
   }
 }
@@ -1982,6 +1997,7 @@ async function convertLeadTo(status) {
   showToast('✅ Lead converted to '+status+'!');
   renderJobDetail(viewingJobId);
   renderDashboard(); renderPipeline();
+  // If marking complete, prompt to text client
   if(status==='Complete') {
     var c = getClientById(j.clientId);
     if(c&&c.phone) {
@@ -1998,6 +2014,7 @@ async function convertLeadTo(status) {
 boot();
 </script>
 
+<!-- CSV PREVIEW MODAL -->
 <div class="overlay" id="modal-csv-preview">
   <div class="modal">
     <div class="modal-title">Import Contacts</div>
@@ -2010,6 +2027,7 @@ boot();
   </div>
 </div>
 
+<!-- CSV HELP MODAL -->
 <div class="overlay" id="modal-csv-help">
   <div class="modal">
     <div class="modal-title">CSV Format Help</div>
@@ -2030,14 +2048,17 @@ boot();
 </div>
 
 
+<!-- NEW LEAD MODAL -->
 <div class="overlay" id="modal-new-lead">
   <div class="modal">
     <div class="modal-title">New Lead</div>
     <div class="modal-sub">Capture a new lead — client + job in one shot</div>
+    <!-- Step indicators -->
     <div class="lead-steps">
       <div class="lead-step active" id="lstep-1"></div>
       <div class="lead-step" id="lstep-2"></div>
     </div>
+    <!-- Step 1: Client Info -->
     <div id="lead-step-1">
       <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">Step 1 of 2 — Contact Info</div>
       <div class="field"><label>Full Name *</label><input id="nl-name" placeholder="e.g. John Smith" autocomplete="off"></div>
@@ -2049,6 +2070,7 @@ boot();
         <button class="btn btn-primary" onclick="leadStep2()">Next →</button>
       </div>
     </div>
+    <!-- Step 2: Job Info -->
     <div id="lead-step-2" style="display:none;">
       <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">Step 2 of 2 — Job Details</div>
       <div class="field"><label>Service *</label>
@@ -2078,6 +2100,7 @@ boot();
   </div>
 </div>
 
+<!-- CONVERT LEAD MODAL -->
 <div class="overlay" id="modal-convert">
   <div class="modal">
     <div class="modal-title">Convert Lead</div>
