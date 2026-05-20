@@ -229,7 +229,6 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="stat-card"><div class="stat-label">Net Profit</div><div class="stat-value" id="d-profit">$0</div><div class="stat-sub">Revenue − expenses</div></div>
     <div class="stat-card"><div class="stat-label">New Leads</div><div class="stat-value" id="d-leads">0</div><div class="stat-sub">Need follow-up</div></div>
   </div>
-  <div class="card"><div class="section-title">Recent Jobs</div><div id="d-recent-jobs"><div class="empty-state"><div class="empty-icon">🚗</div><div class="empty-text">No jobs yet</div></div></div></div>
   <!-- Status tiles on dashboard — tap to jump to pipeline filtered -->
   <div class="status-grid">
     <div class="status-tile lead"     onclick="showPage('pipeline');filterPipeline('Lead')">       <div class="status-tile-num" id="sb-lead">0</div>     <div class="status-tile-lbl">Lead</div></div>
@@ -238,6 +237,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="status-tile progress" onclick="showPage('pipeline');filterPipeline('In Progress')"><div class="status-tile-num" id="sb-progress">0</div> <div class="status-tile-lbl">In Prog</div></div>
     <div class="status-tile complete" onclick="showPage('pipeline');filterPipeline('Complete')">   <div class="status-tile-num" id="sb-complete">0</div> <div class="status-tile-lbl">Done</div></div>
   </div>
+  <div class="card"><div class="section-title">Recent Jobs</div><div id="d-recent-jobs"><div class="empty-state"><div class="empty-icon">🚗</div><div class="empty-text">No jobs yet</div></div></div></div>
   <div class="card"><div class="section-title">Top Clients by Value</div><div id="d-top-clients"><div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">No clients yet</div></div></div></div>
 </div>
 
