@@ -271,7 +271,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="status-tile progress" onclick="showPage('pipeline');filterPipeline('In Progress')"><div class="status-tile-num" id="sb-progress">0</div> <div class="status-tile-lbl">In Prog</div></div>
     <div class="status-tile complete" onclick="showPage('pipeline');filterPipeline('Complete')">   <div class="status-tile-num" id="sb-complete">0</div> <div class="status-tile-lbl">Done</div></div>
   </div>
-  <div class="card"><div class="section-title">Recent Jobs</div><div id="d-recent-jobs"><div class="empty-state"><div class="empty-icon">🚗</div><div class="empty-text">No jobs yet</div></div></div></div>
+  <div class="card"><div class="section-title">Upcoming Schedule</div><div id="d-upcoming-jobs"><div class="empty-state"><div class="empty-icon">📅</div><div class="empty-text">No active appointments scheduled</div></div></div></div>
   <div class="card"><div class="section-title">Top Clients by Value</div><div id="d-top-clients"><div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">No clients yet</div></div></div></div>
 </div>
 
@@ -371,7 +371,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="status-tile quoted"   onclick="filterPipeline('Quoted')">     <div class="status-tile-num" id="pt-quoted">0</div>   <div class="status-tile-lbl">Quoted</div></div>
     <div class="status-tile booked"   onclick="filterPipeline('Booked')">     <div class="status-tile-num" id="pt-booked">0</div>   <div class="status-tile-lbl">Booked</div></div>
     <div class="status-tile progress" onclick="filterPipeline('In Progress')"><div class="status-tile-num" id="pt-progress">0</div> <div class="status-tile-lbl">In Prog</div></div>
-    <div class="status-tile complete" onclick="filterPipeline('Complete')">   <div class="status-tile-num" id="sb-complete">0</div> <div class="status-tile-lbl">Done</div></div>
+    <div class="status-tile complete" onclick="filterPipeline('Complete')">   <div class="status-tile-num" id="pt-complete">0</div> <div class="status-tile-lbl">Done</div></div>
   </div>
   <div class="card"><div id="pipeline-content"></div></div>
 </div>
@@ -441,10 +441,10 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
   </div>
 
   <div class="stats-grid">
-    <div class="stats-card, stat-card"><div class="stat-label">Revenue</div><div class="stat-value" id="r-revenue">$0</div><div class="stat-sub" id="r-revenue-sub">0 jobs</div></div>
-    <div class="stats-card, stat-card"><div class="stat-label">Expenses</div><div class="stat-value" id="r-expenses" style="color:var(--red)">$0</div><div class="stat-sub" id="r-expenses-sub">0 items</div></div>
-    <div class="stats-card, stat-card"><div class="stat-label">Net Profit</div><div class="stat-value" id="r-profit">$0</div><div class="stat-sub">Revenue − expenses</div></div>
-    <div class="stats-card, stat-card"><div class="stat-label">Avg Job Value</div><div class="stat-value" id="r-avg">$0</div><div class="stat-sub">Per completed job</div></div>
+    <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value" id="r-revenue">$0</div><div class="stat-sub" id="r-revenue-sub">0 jobs</div></div>
+    <div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-value" id="r-expenses" style="color:var(--red)">$0</div><div class="stat-sub" id="r-expenses-sub">0 items</div></div>
+    <div class="stat-card"><div class="stat-label">Net Profit</div><div class="stat-value" id="r-profit">$0</div><div class="stat-sub">Revenue − expenses</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Job Value</div><div class="stat-value" id="r-avg">$0</div><div class="stat-sub">Per completed job</div></div>
   </div>
 
   <div class="card">
@@ -807,11 +807,10 @@ function tFmt(tStr) {
   if(!tStr) return '';
   var parts = tStr.split(':');
   var h = parseInt(parts[0]);
-  var m = parts[1];
   var ampm = h >= 12 ? 'PM' : 'AM';
   h = h % 12;
   h = h ? h : 12;
-  return h + ':' + m + ' ' + ampm;
+  return h + ':' + parts[1] + ' ' + ampm;
 }
 
 // ══════════════════════════════════════════════════════
@@ -1277,7 +1276,7 @@ function renderMore(){
 }
 
 // ══════════════════════════════════════════════════════
-// DASHBOARD
+// DASHBOARD (CHRONOLOGICAL UPCOMING SCHEDULE COMPONENT)
 // ══════════════════════════════════════════════════════
 function renderDashboard(){
   var rev=jobs.filter(j=>j.status==='Complete').reduce((s,j)=>s+j.price,0);
@@ -1288,6 +1287,7 @@ function renderDashboard(){
   document.getElementById('d-pipeline').textContent=fmt(pip);
   var prof=rev-exp;var dp=document.getElementById('d-profit');dp.textContent=fmt(prof);dp.style.color=prof<0?'var(--red)':'var(--text)';
   document.getElementById('d-leads').textContent=leads;
+  
   var statuses=['Lead','Quoted','Booked','In Progress','Complete'];
   var keys=['lead','quoted','booked','progress','complete'];
   var counts=statuses.map(s=>jobs.filter(j=>j.status===s).length);
@@ -1295,8 +1295,30 @@ function renderDashboard(){
     var el=document.getElementById('sb-'+keys[i]);
     if(el) el.textContent=counts[i];
   });
-  var recent=jobs.slice().reverse().slice(0,5);
-  document.getElementById('d-recent-jobs').innerHTML=recent.length?recent.map(j=>{var c=getClientById(j.clientId);return`<div class="job-row" onclick="viewJob(${j.id})" style="cursor:pointer"><div class="job-info"><div class="job-name">${c?c.name:'Unknown'}</div><div class="job-meta">${c&&c.vehicle?c.vehicle+' · ':''}${j.service}</div><div class="job-meta">${j.date} ${j.appointmentTime ? '· 🕒 ' + tFmt(j.appointmentTime) : ''}</div></div><div class="job-right"><div class="job-price">${fmt(j.price)}</div><span class="badge ${statusBadge(j.status)}">${j.status}</span></div></div>`;}).join(''):'<div class="empty-state"><div class="empty-icon">🚗</div><div class="empty-text">No jobs yet</div></div>';
+  
+  // Isolate and sort active timeline sequences chromatically (Ascending by Date then Time)
+  var upcoming = jobs.filter(j => j.status === 'Booked' || j.status === 'In Progress')
+                     .sort((a, b) => {
+                       if ((a.date || '') !== (b.date || '')) return (a.date || '').localeCompare(b.date || '');
+                       return (a.appointmentTime || '').localeCompare(b.appointmentTime || '');
+                     }).slice(0, 10);
+
+  document.getElementById('d-upcoming-jobs').innerHTML = upcoming.length ? upcoming.map(j => {
+    var c = getClientById(j.clientId);
+    var timeStr = j.appointmentTime ? ' · 🕒 ' + tFmt(j.appointmentTime) : '';
+    return `<div class="job-row" onclick="viewJob(${j.id})" style="cursor:pointer">
+      <div class="job-info">
+        <div class="job-name">${c ? c.name : 'Unknown'}</div>
+        <div class="job-meta">${c && c.vehicle ? c.vehicle + ' · ': ''}${j.service}</div>
+        <div class="job-meta">${j.date}${timeStr}</div>
+      </div>
+      <div class="job-right">
+        <div class="job-price">${fmt(j.price)}</div>
+        <span class="badge ${statusBadge(j.status)}">${j.status}</span>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-text">No active appointments scheduled</div></div>';
+
   var cv=clients.map(c=>({c,total:jobs.filter(j=>j.clientId===c.id&&j.status==='Complete').reduce((s,j)=>s+j.price,0),count:jobs.filter(j=>j.clientId===c.id).length})).sort((a,b)=>b.total-a.total).slice(0,5);
   document.getElementById('d-top-clients').innerHTML=cv.length?cv.map(x=>`<div class="list-row" onclick="viewClient(${x.c.id})" style="cursor:pointer"><div class="avatar">${initials(x.c.name)}</div><div class="row-info"><div class="row-name">${x.c.name}</div><div class="row-sub">${x.c.vehicle||'No vehicle'} · ${x.count} job${x.count!==1?'s':''}</div></div><div class="row-right"><div class="row-value">${fmt(x.total)}</div></div></div>`).join(''):'<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">No clients yet</div></div>';
 }
@@ -1352,7 +1374,7 @@ document.getElementById('btn-add-job').onclick=()=>openAddJob();
 document.getElementById('btn-add-expense').onclick=()=>{document.getElementById('me-date').value=today();openModal('modal-expense');};
 
 // ══════════════════════════════════════════════════════
-// BOOT
+// APPLICATION RUNTIME BOOT
 // ══════════════════════════════════════════════════════
 async function boot(){
   document.getElementById('loading-msg').textContent='Loading local data...';
@@ -1367,7 +1389,7 @@ async function boot(){
 
 
 // ══════════════════════════════════════════════════════
-// CSV CONTACT IMPORT
+// PARSING SUBSYSTEM (CSV INTEGRATION)
 // ══════════════════════════════════════════════════════
 var csvParsedContacts = [];
 
@@ -1468,7 +1490,7 @@ async function confirmCSVImport() {
   var total = csvParsedContacts.length;
   var done = 0;
   setSyncStatus('syncing', 'Importing ' + total + ' contacts...');
-  showToast('Campur into cloud...');
+  showToast('Importing ' + total + ' contacts...');
 
   for(var c of csvParsedContacts) {
     var data = { name: c.name, vehicle: c.vehicle||'', phone: c.phone||'', email: c.email||'', notes: c.notes||'' };
@@ -1570,7 +1592,7 @@ function populateModels(preselect) {
 
 
 // ══════════════════════════════════════════════════════
-// LEAD CAPTURE SCHEMA TRANSLATOR
+// NEW LEAD CAPTURE
 // ══════════════════════════════════════════════════════
 function openNewLeadModal() {
   ['nl-name','nl-phone','nl-email','nl-notes','nl-price'].forEach(id=>{
@@ -1584,6 +1606,7 @@ function openNewLeadModal() {
   var cur=new Date().getFullYear();
   yearSel.innerHTML='<option value="">Select year...</option>';
   for(var y=cur+1;y>=1990;y--) yearSel.innerHTML+=`<option value="${y}">${y}</option>`;
+  makeSel.innerHTML='<option value="${m}"></option>';
   makeSel.innerHTML='<option value="">Select make...</option>';
   Object.keys(VEHICLE_DATA).sort().forEach(m=>makeSel.innerHTML+=`<option value="${m}">${m}</option>`);
   document.getElementById('nl-model').innerHTML='<option value="">Select model...</option>';
@@ -1678,7 +1701,7 @@ async function saveNewLead() {
 }
 
 // ══════════════════════════════════════════════════════
-// DATA TRANSITION PIPELINES
+// CONVERT LEAD
 // ══════════════════════════════════════════════════════
 function showConvertButton(job) {
   var wrap = document.getElementById('jd-convert-wrap');
