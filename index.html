@@ -32,7 +32,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:15px;position:relative;overflow:hidden;}
 .stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:var(--border2);}
 .stat-label{font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:5px;}
-.stat-value{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--text);line-height:1;}
+.text-value,.stat-value{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--text);line-height:1;}
 .stat-sub{font-size:10px;color:var(--muted);margin-top:3px;}
 .page-hdr{display:flex;align-items:flex-start;justify-content:space-between;}
 .page-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;}
@@ -710,7 +710,7 @@ function setSyncStatus(state, msg) {
 }
 
 // ══════════════════════════════════════════════════════
-// FULL SYNC  — load everything from Supabase (FIX INTEGRATED)
+// FULL SYNC  — load everything from Supabase
 // ══════════════════════════════════════════════════════
 async function fullSync() {
   setSyncStatus('syncing', 'Syncing with cloud...');
@@ -862,7 +862,6 @@ async function saveClient() {
   saveCache(); renderDashboard();
   if(currentPage==='clients') renderClients();
 }
-// ── BULK SELECT STATE ──
 var bulkMode = false;
 var bulkSelected = new Set();
 
@@ -1007,7 +1006,7 @@ async function logNote() {
 function confirmDeleteClient() {
   var c = getClientById(viewingClientId); if(!c) return;
   showConfirm('Delete "'+c.name+'"?', 'All jobs and communications will also be removed.', async function() {
-    try { await sbDelete('clients', viewingClientId); } catch(e) {}
+    try { await sbDelete('clients', viewingClientId); } catch(e){}
     jobs    = jobs.filter(j=>j.clientId!==viewingClientId);
     comms   = comms.filter(cm=>cm.clientId!==viewingClientId);
     clients = clients.filter(x=>x.id!==viewingClientId);
@@ -1194,7 +1193,6 @@ function renderJobs(filter) {
   filter=filter||''; var f=filter.toLowerCase();
   var list=jobs.filter(j=>{var c=getClientById(j.clientId);var cn=c?c.name:'';return cn.toLowerCase().includes(f)||j.service.toLowerCase().includes(f)||j.status.toLowerCase().includes(f);});
   document.getElementById('jobs-sub').textContent=list.length+' job'+(list.length!==1?'s':'');
-  var el=jobs-list;
   var el=document.getElementById('jobs-list');
   if(!list.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">🚗</div><div class="empty-text">'+(filter?'No match for "'+filter+'"':'No jobs yet.')+'</div></div>';return;}
   el.innerHTML=list.slice().reverse().map(j=>{
@@ -1417,7 +1415,6 @@ function renderDashboard(){
   document.getElementById('d-leads').textContent=leads;
   var statuses=['Lead','Quoted','Booked','In Progress','Complete'];
   var keys=['lead','quoted','booked','progress','complete'];
-  var counts=statuses.map(s=>jobs.filter(s=>j.status===s).length);
   var counts=statuses.map(s=>jobs.filter(j=>j.status===s).length);
   statuses.forEach((s,i)=>{
     var el=document.getElementById('sb-'+keys[i]);
@@ -1882,7 +1879,6 @@ function leadBack() {
   document.getElementById('lstep-2').className='lead-step';
 }
 
-// (FIX INTEGRATED)
 async function saveNewLead() {
   var name    = document.getElementById('nl-name').value.trim();
   var service = document.getElementById('nl-service').value;
@@ -1903,12 +1899,10 @@ async function saveNewLead() {
   setSyncStatus('syncing','Saving lead...');
 
   try {
-    // 1. Create client
     var clientRow = await sbInsert('clients',{name,phone,email,vehicle:veh,notes});
     var newClient = mapClient(clientRow);
     clients.push(newClient);
 
-    // 2. Create job as Lead (Safely typeset parameters)
     var jobRow = await sbInsert('jobs',{
       client_id: newClient.id, 
       service, 
@@ -1933,7 +1927,6 @@ async function saveNewLead() {
 
   } catch(err) {
     console.error('Database Error Details:', err);
-    // Offline fallback
     var cid = Date.now();
     clients.push({id:cid,name,phone,email,vehicle:veh,notes});
     jobs.push({id:cid+1,clientId:cid,service,price,status:'Lead',date,notes:'',vehicleYear:year,vehicleMake:make,vehicleModel:model,photos:[]});
