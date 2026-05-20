@@ -136,7 +136,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 .template-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;}
 .template-card:active{background:var(--surface3);}
 .template-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;}
-.template-preview覆{font-size:13px;color:var(--text2);line-height:1.4;}
+.template-preview{font-size:13px;color:var(--text2);line-height:1.4;}
 .template-actions{display:flex;gap:8px;margin-top:10px;}
 .tpl-btn{flex:1;padding:10px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;}
 .tpl-sms{background:rgba(144,202,249,.15);color:var(--blue);}
@@ -369,7 +369,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <button class="new-lead-btn" onclick="openNewLeadModal()">＋ New Lead</button>
   </div>
   <div class="status-grid">
-    <div class="status-tile lead"     onclick="filterPipeline('Lead')">       <div class="status-tile-num" id="pt-lead">0</div>     <div class="status-tile-lbl">Lead</div></div>
+    <div class="status-tile lead"      onclick="filterPipeline('Lead')">       <div class="status-tile-num" id="pt-lead">0</div>     <div class="status-tile-lbl">Lead</div></div>
     <div class="status-tile quoted"    onclick="filterPipeline('Quoted')">     <div class="status-tile-num" id="pt-quoted">0</div>   <div class="status-tile-lbl">Quoted</div></div>
     <div class="status-tile booked"    onclick="filterPipeline('Booked')">     <div class="status-tile-num" id="pt-booked">0</div>   <div class="status-tile-lbl">Booked</div></div>
     <div class="status-tile progress" onclick="filterPipeline('In Progress')"><div class="status-tile-num" id="pt-progress">0</div> <div class="status-tile-lbl">In Prog</div></div>
@@ -640,7 +640,12 @@ async function sbInsert(table, data) {
     throw new Error('Database write rejected: ' + errText + ' (Status: ' + res.status + ')');
   }
   var rows = await res.json();
-  return Array.isArray(rows) ? rows[0] : rows;
+  var result = Array.isArray(rows) ? rows[0] : rows;
+  
+  if (!result) {
+    throw new Error('Row created but RLS policy denied reading it back. Falling back to local ID management.');
+  }
+  return result;
 }
 
 async function sbUpdate(table, id, data) {
@@ -777,8 +782,14 @@ async function fullSync() {
   }
 }
 
-function mapClient(r) { return { id: r.id, name: r.name||'', vehicle: r.vehicle||'', phone: r.phone||'', email: r.email||'', notes: r.notes||'' }; }
-function mapJob(r)    { return { id: r.id, clientId: r.client_id, service: r.service||'', price: parseFloat(r.price)||0, status: r.status||'Lead', date: r.date||'', appointmentTime: r.appointment_time||'', notes: r.notes||'', vehicleYear: r.vehicle_year||'', vehicleMake: r.vehicle_make||'', vehicleModel: r.vehicle_model||'', photos: [] }; }
+function mapClient(r) { 
+  if (!r) return { id: Date.now(), name: 'Unknown Client', vehicle: '', phone: '', email: '', notes: '' };
+  return { id: r.id, name: r.name||'', vehicle: r.vehicle||'', phone: r.phone||'', email: r.email||'', notes: r.notes||'' }; 
+}
+function mapJob(r)    { 
+  if (!r) return { id: Date.now(), clientId: '', service: '', price: 0, status: 'Lead', date: '', appointmentTime: '', notes: '', vehicleYear: '', vehicleMake: '', vehicleModel: '', photos: [] };
+  return { id: r.id, clientId: r.client_id, service: r.service||'', price: parseFloat(r.price)||0, status: r.status||'Lead', date: r.date||'', appointmentTime: r.appointment_time||'', notes: r.notes||'', vehicleYear: r.vehicle_year||'', vehicleMake: r.vehicle_make||'', vehicleModel: r.vehicle_model||'', photos: [] }; 
+}
 function mapExpense(r){ return { id: r.id, name: r.name||'', cat: r.cat||'Other', amount: parseFloat(r.amount)||0, date: r.date||'', notes: r.notes||'' }; }
 function mapComm(r)   { return { id: r.id, clientId: r.client_id, type: r.type||'note', body: r.body||'', ts: r.ts||'', jobId: r.job_id||0 }; }
 
