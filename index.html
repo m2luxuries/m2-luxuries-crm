@@ -74,6 +74,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 .comm-body{flex:1;min-width:0;}
 .comm-type{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;}
 .comm-msg{font-size:13px;margin-top:3px;line-height:1.4;color:var(--text2);}
+.comm-msg{font-size:13px;margin-top:3px;line-height:1.4;color:var(--text2);}
 .comm-time{font-size:10px;color:var(--muted);margin-top:4px;}
 .status-list{display:flex;flex-direction:column;gap:10px;}
 .status-row{display:flex;flex-direction:column;gap:4px;}
@@ -1622,7 +1623,7 @@ var VEHICLE_DATA = {
   'Acura':['ILX','MDX','NSX','RDX','RLX','TL','TLX','TSX'],
   'Alfa Romeo':['Giulia','Giulietta','Stelvio','4C'],
   'Aston Martin':['DB11','DBS','Vantage','DBX'],
-  'Audi':['A3','A4','A5','A6','A7','A8','Q3','Q5','Q7','Q8','RS3','RS5','RS6','RS7','S3','S4','S5','S6','S7','TT','e-tron'],
+  'Audi':['A3','A4','A5','A6','A7','A8','Q35','Q5','Q7','Q8','RS3','RS5','RS6','RS7','S3','S4','S5','S6','S7','TT','e-tron'],
   'Bentley':['Bentayga','Continental GT','Flying Spur','Mulsanne'],
   'BMW':['1 Series','2 Series','3 Series','4 Series','5 Series','6 Series','7 Series','8 Series','M2','M3','M4','M5','M8','X1','X2','X3','X4','X5','X6','X7','Z4','i3','i4','i7','iX'],
   'Buick':['Enclave','Encore','Envision','LaCrosse'],
@@ -1801,15 +1802,12 @@ function renderReports() {
   var topClients = Object.entries(clientMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
   var tcEl = document.getElementById('r-top-clients');
   tcEl.innerHTML = topClients.length
-    ? topClients.map(([cid,amt])=>{
-        var c = getClientById(parseInt(cid));
-        var count = completedJobs.filter(j=>j.clientId===parseInt(cid)).length;
-        return `<div class="list-row" onclick="viewClient(${cid})" style="cursor:pointer">
-          <div class="avatar">${initials(c?c.name:'?')}</div>
-          <div class="row-info"><div class="row-name">${c?c.name:'Unknown'}</div><div class="row-sub">${count} job${count!==1?'s':''}</div></div>
+    ? topClients.map(([cid,amt])=>`
+        <div class="list-row" onclick="viewClient(${cid})" style="cursor:pointer">
+          <div class="avatar">${initials(getClientById(parseInt(cid))?getClientById(parseInt(cid)).name:'?')}</div>
+          <div class="row-info"><div class="row-name">${getClientById(parseInt(cid))?getClientById(parseInt(cid)).name:'Unknown'}</div><div class="row-sub">${completedJobs.filter(j=>j.clientId===parseInt(cid)).length} jobs</div></div>
           <div class="row-right"><div class="row-value">${fmt(amt)}</div></div>
-        </div>`;
-      }).join('')
+        </div>`).join('')
     : '<div class="empty-state"><div class="empty-text">No completed jobs in this period</div></div>';
 
   var cjEl = document.getElementById('r-completed-jobs');
@@ -1861,6 +1859,7 @@ function populateLeadModels() {
   if(make&&VEHICLE_DATA[make]) VEHICLE_DATA[make].forEach(m=>sel.innerHTML+=`<option value="${m}">${m}</option>`);
 }
 
+// 🎯 Step validation patch to allow smooth field conversion
 function leadStep2() {
   var name=document.getElementById('nl-name').value.trim();
   if(!name){showToast('⚠️ Name is required');return;}
