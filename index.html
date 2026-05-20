@@ -136,7 +136,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 .template-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;}
 .template-card:active{background:var(--surface3);}
 .template-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;}
-.template-preview{font-size:13px;color:var(--text2);line-height:1.4;}
+.template-preview覆{font-size:13px;color:var(--text2);line-height:1.4;}
 .template-actions{display:flex;gap:8px;margin-top:10px;}
 .tpl-btn{flex:1;padding:10px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;}
 .tpl-sms{background:rgba(144,202,249,.15);color:var(--blue);}
@@ -241,6 +241,8 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 .spinner{width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--text);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 </style>
+</head>
+<body>
 
 <div class="loading-screen" id="loading-screen">
   <div class="loading-logo">M2 LUXURIES</div>
@@ -266,8 +268,8 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
   </div>
   <div class="status-grid">
     <div class="status-tile lead"      onclick="showPage('pipeline');filterPipeline('Lead')">       <div class="status-tile-num" id="sb-lead">0</div>     <div class="status-tile-lbl">Lead</div></div>
-    <div class="status-tile quoted"   onclick="showPage('pipeline');filterPipeline('Quoted')">     <div class="status-tile-num" id="sb-quoted">0</div>   <div class="status-tile-lbl">Quoted</div></div>
-    <div class="status-tile booked"   onclick="showPage('pipeline');filterPipeline('Booked')">     <div class="status-tile-num" id="sb-booked">0</div>   <div class="status-tile-lbl">Booked</div></div>
+    <div class="status-tile quoted"    onclick="showPage('pipeline');filterPipeline('Quoted')">     <div class="status-tile-num" id="sb-quoted">0</div>   <div class="status-tile-lbl">Quoted</div></div>
+    <div class="status-tile booked"    onclick="showPage('pipeline');filterPipeline('Booked')">     <div class="status-tile-num" id="sb-booked">0</div>   <div class="status-tile-lbl">Booked</div></div>
     <div class="status-tile progress" onclick="showPage('pipeline');filterPipeline('In Progress')"><div class="status-tile-num" id="sb-progress">0</div> <div class="status-tile-lbl">In Prog</div></div>
     <div class="status-tile complete" onclick="showPage('pipeline');filterPipeline('Complete')">   <div class="status-tile-num" id="sb-complete">0</div> <div class="status-tile-lbl">Done</div></div>
   </div>
@@ -368,8 +370,8 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
   </div>
   <div class="status-grid">
     <div class="status-tile lead"     onclick="filterPipeline('Lead')">       <div class="status-tile-num" id="pt-lead">0</div>     <div class="status-tile-lbl">Lead</div></div>
-    <div class="status-tile quoted"   onclick="filterPipeline('Quoted')">     <div class="status-tile-num" id="pt-quoted">0</div>   <div class="status-tile-lbl">Quoted</div></div>
-    <div class="status-tile booked"   onclick="filterPipeline('Booked')">     <div class="status-tile-num" id="pt-booked">0</div>   <div class="status-tile-lbl">Booked</div></div>
+    <div class="status-tile quoted"    onclick="filterPipeline('Quoted')">     <div class="status-tile-num" id="pt-quoted">0</div>   <div class="status-tile-lbl">Quoted</div></div>
+    <div class="status-tile booked"    onclick="filterPipeline('Booked')">     <div class="status-tile-num" id="pt-booked">0</div>   <div class="status-tile-lbl">Booked</div></div>
     <div class="status-tile progress" onclick="filterPipeline('In Progress')"><div class="status-tile-num" id="pt-progress">0</div> <div class="status-tile-lbl">In Prog</div></div>
     <div class="status-tile complete" onclick="filterPipeline('Complete')">   <div class="status-tile-num" id="pt-complete">0</div> <div class="status-tile-lbl">Done</div></div>
   </div>
@@ -421,10 +423,8 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
   </div>
 </div>
 
-
 <div class="page" id="page-reports">
   <div class="page-hdr"><div><div class="page-title">Reports</div><div class="page-sub">Revenue, expenses &amp; profit</div></div></div>
-
   <div class="card" style="padding:12px 14px;">
     <div class="section-title">Date Range</div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px;">
@@ -439,39 +439,27 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     </div>
     <div style="font-size:11px;color:var(--muted);margin-top:8px;" id="range-label"></div>
   </div>
-
   <div class="stats-grid">
     <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value" id="r-revenue">$0</div><div class="stat-sub" id="r-revenue-sub">0 jobs</div></div>
     <div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-value" id="r-expenses" style="color:var(--red)">$0</div><div class="stat-sub" id="r-expenses-sub">0 items</div></div>
     <div class="stat-card"><div class="stat-label">Net Profit</div><div class="stat-value" id="r-profit">$0</div><div class="stat-sub">Revenue − expenses</div></div>
     <div class="stat-card"><div class="stat-label">Avg Job Value</div><div class="stat-value" id="r-avg">$0</div><div class="stat-sub">Per completed job</div></div>
   </div>
-
   <div class="card">
     <div class="section-title">Revenue by Service</div>
     <div id="r-by-service"><div class="empty-state"><div class="empty-text">No completed jobs in this period</div></div></div>
   </div>
-
   <div class="card">
     <div class="section-title">Expenses by Category</div>
     <div id="r-by-category"><div class="empty-state"><div class="empty-text">No expenses in this period</div></div></div>
   </div>
-
   <div class="card">
     <div class="section-title">Top Clients This Period</div>
     <div id="r-top-clients"><div class="empty-state"><div class="empty-text">No completed jobs in this period</div></div></div>
   </div>
-
   <div class="card">
     <div class="section-title">Completed Jobs</div>
     <div id="r-completed-jobs"><div class="empty-state"><div class="empty-text">No completed jobs in this period</div></div></div>
-  </div>
-
-  <div class="card" style="cursor:pointer;" onclick="showPage('messages')">
-    <div style="display:flex;align-items:center;justify-content:space-between;">
-      <div><div style="font-size:14px;font-weight:600;">💬 Messages &amp; Templates</div><div style="font-size:11px;color:var(--muted);margin-top:3px;">View communication log &amp; send templates</div></div>
-      <span style="color:var(--muted);font-size:20px;">›</span>
-    </div>
   </div>
 </div>
 
@@ -682,6 +670,8 @@ async function sbDelete(table, id) {
 // ══════════════════════════════════════════════════════
 var clients = [], jobs = [], expenses = [], comms = [];
 var isOnline = false;
+var smsTempClientId = null;
+var reportRange = 'week';
 
 var MESSAGE_TEMPLATES = [
   {id:'quote',   label:'Quote Follow-Up',       icon:'💰', body:'Hi {name}, just following up on the quote for your {vehicle}. Let me know if you have any questions — happy to get you scheduled!'},
@@ -715,10 +705,10 @@ function setSyncStatus(state, msg) {
   var txt = document.getElementById('sync-status-text');
   var sub = document.getElementById('sync-status-sub');
   var footer = document.getElementById('footer-status');
-  dot.className = 'sync-dot ' + state;
-  if (state === 'online')  { txt.textContent = '🟢 Connected to cloud'; isOnline = true; }
-  if (state === 'offline') { txt.textContent = '🔴 Offline — using local data'; isOnline = false; }
-  if (state === 'syncing') { txt.textContent = '🟡 Syncing...'; }
+  if (dot) dot.className = 'sync-dot ' + state;
+  if (state === 'online')  { if(txt) txt.textContent = '🟢 Connected to cloud'; isOnline = true; }
+  if (state === 'offline') { if(txt) txt.textContent = '🔴 Offline — using local data'; isOnline = false; }
+  if (state === 'syncing') { if(txt) txt.textContent = '🟡 Syncing...'; }
   if (sub && msg) sub.textContent = msg;
   if (footer) footer.textContent = msg || (state === 'online' ? 'Cloud synced' : 'Working offline');
 }
@@ -822,7 +812,8 @@ var viewingClientId = null, viewingJobId = null;
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
+  var pEl = document.getElementById('page-'+name);
+  if(pEl) pEl.classList.add('active');
   var nav = document.getElementById('nav-'+name);
   if(nav) nav.classList.add('active');
   currentPage = name;
@@ -842,19 +833,22 @@ function refreshCurrentPage() {
   if(p==='messages') renderMessages();
   if(p==='reports')  renderReports();
   if(p==='more')     renderMore();
+  if(p==='client-detail' && viewingClientId) renderClientDetail(viewingClientId);
+  if(p==='job-detail' && viewingJobId) renderJobDetail(viewingJobId);
 }
 
 // ══════════════════════════════════════════════════════
 // MODAL & DISPLAY MANAGEMENT
 // ══════════════════════════════════════════════════════
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id)  { var m = document.getElementById(id); if(m) m.classList.add('open'); }
+function closeModal(id) { var m = document.getElementById(id); if(m) m.classList.remove('open'); }
 document.querySelectorAll('.overlay').forEach(ov => {
   ov.addEventListener('click', e => { if(e.target===ov) ov.classList.remove('open'); });
 });
 var toastTimer = null;
 function showToast(msg) {
   var t = document.getElementById('toast');
+  if(!t) return;
   t.textContent = msg; t.classList.add('show');
   if(toastTimer) clearTimeout(toastTimer);
   toastTimer = setTimeout(()=>t.classList.remove('show'), 2500);
@@ -876,7 +870,9 @@ document.getElementById('confirm-overlay').addEventListener('click', e => { if(e
 function openAddClient() {
   document.getElementById('mc-id').value='';
   document.getElementById('mc-title').textContent='New Client';
-  ['mc-name','mc-vehicle','mc-phone','mc-email','mc-notes'].forEach(id=>document.getElementById(id).value='');
+  ['mc-name','mc-vehicle','mc-phone','mc-email','mc-notes'].forEach(id=>{
+    var el = document.getElementById(id); if(el) el.value='';
+  });
   openModal('modal-client');
 }
 function editClient() {
@@ -909,7 +905,7 @@ async function saveClient() {
       showToast('✓ Client added');
     }
   } catch(err) {
-    alert("🔴 CLIENT SAVE REJECTED:\n" + err.message);
+    console.error("Client Save Error:", err);
     if(id) { var c=clients.find(x=>x.id==id); if(c) Object.assign(c,data); }
     else { data.id = Date.now(); clients.push(data); }
     showToast('✓ Saved locally (sync when online)');
@@ -917,6 +913,152 @@ async function saveClient() {
   saveCache(); renderDashboard();
   if(currentPage==='clients') renderClients();
 }
+
+function renderClients(filter) {
+  filter = filter || ''; var f = filter.toLowerCase();
+  var list = clients.filter(c => c.name.toLowerCase().includes(f) || (c.vehicle && c.vehicle.toLowerCase().includes(f)));
+  var sub = document.getElementById('clients-sub');
+  if(sub) sub.textContent = list.length + ' client' + (list.length !== 1 ? 's' : '');
+  var el = document.getElementById('clients-list');
+  if(!el) return;
+  if(!list.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">${filter ? 'No match for "' + filter + '"' : 'No clients yet.'}</div></div>`;
+    return;
+  }
+  el.innerHTML = list.slice().reverse().map(c => {
+    var isChecked = bulkSelected.has(c.id);
+    var cbHtml = bulkMode ? `<div id="cb-${c.id}" class="client-checkbox ${isChecked?'checked':''}" onclick="toggleSelectClient(${c.id}, event)">${isChecked?'✓':''}</div>` : '';
+    return `<div class="list-row ${bulkMode ? 'selecting' : ''}" onclick="${bulkMode ? 'toggleSelectClient(' + c.id + ', event)' : 'viewClient(' + c.id + ')'}" style="cursor:pointer">
+      ${cbHtml}
+      <div class="avatar">${initials(c.name)}</div>
+      <div class="row-info">
+        <div class="row-name">${c.name}</div>
+        <div class="row-sub">${c.vehicle || 'No vehicle'}</div>
+      </div>
+      <span style="color:var(--muted)">›</span>
+    </div>`;
+  }).join('');
+}
+
+function viewClient(id) { viewingClientId = id; renderClientDetail(id); showPage('client-detail'); }
+
+function renderClientDetail(id) {
+  var c = getClientById(id); if(!c) return;
+  document.getElementById('cd-title').textContent = c.name;
+  document.getElementById('cd-vehicle').textContent = c.vehicle || '—';
+  document.getElementById('cd-phone').textContent = c.phone || '—';
+  document.getElementById('cd-email').textContent = c.email || '—';
+  document.getElementById('cd-notes').textContent = c.notes || '—';
+
+  var cJobs = jobs.filter(j => j.clientId === id);
+  var jEl = document.getElementById('cd-jobs');
+  if(jEl) {
+    jEl.innerHTML = cJobs.length ? cJobs.slice().reverse().map(j => `
+      <div class="job-row" onclick="viewJob(${j.id})" style="cursor:pointer">
+        <div class="job-info">
+          <div class="job-name">${j.service}</div>
+          <div class="job-meta">${j.date} ${j.appointmentTime ? '· 🕒 ' + tFmt(j.appointmentTime) : ''}</div>
+        </div>
+        <div class="job-right">
+          <div class="job-price">${fmt(j.price)}</div>
+          <span class="badge ${statusBadge(j.status)}">${j.status}</span>
+        </div>
+      </div>
+    `).join('') : '<div class="empty-state"><div class="empty-text">No jobs for this client</div></div>';
+  }
+
+  var cComms = comms.filter(cm => cm.clientId === id);
+  var oEl = document.getElementById('cd-comm-log');
+  var iconMap = {call:'📞', sms:'💬', note:'📝'};
+  if(oEl) {
+    oEl.innerHTML = cComms.length ? cComms.slice().reverse().map(cm => `
+      <div class="comm-item">
+        <div class="comm-icon ${cm.type}">${iconMap[cm.type]||'📝'}</div>
+        <div class="comm-body">
+          <div class="comm-type">${cm.type}</div>
+          <div class="comm-msg">${cm.body}</div>
+          <div class="comm-time">${cm.ts}</div>
+        </div>
+      </div>
+    `).join('') : '<div class="empty-state"><div class="empty-text">No communications logged yet</div></div>';
+  }
+}
+
+function confirmDeleteClient() {
+  var c = getClientById(viewingClientId); if(!c) return;
+  showConfirm('Delete this client?', `"${c.name}" and all records will be permanently removed.`, async function() {
+    try { await sbDelete('clients', viewingClientId); } catch(e) {}
+    clients = clients.filter(x => x.id !== viewingClientId);
+    jobs = jobs.filter(x => x.clientId !== viewingClientId);
+    saveCache(); showToast('✓ Client deleted'); showPage('clients'); renderDashboard();
+  });
+}
+
+async function bulkDelete() {
+  if(!bulkSelected.size) { showToast('⚠️ No clients selected'); return; }
+  showConfirm(`Delete ${bulkSelected.size} clients?`, 'This will permanently delete records across elements.', async function() {
+    setSyncStatus('syncing', 'Deleting production items...');
+    for(var id of bulkSelected) {
+      try { await sbDelete('clients', id); } catch(e){}
+      clients = clients.filter(x => x.id !== id);
+      jobs = jobs.filter(x => x.clientId !== id);
+    }
+    bulkSelected.clear(); toggleBulkMode(); saveCache();
+    setSyncStatus('online', 'Bulk production clean completed'); showToast('✓ Selection clean');
+    renderDashboard(); renderClients();
+  });
+}
+
+function callClient() { logComm(viewingClientId, 'call', 'Outgoing call initiated'); }
+function callClientFromJob() { var j=jobs.find(x=>x.id===viewingJobId); if(j) logComm(j.clientId,'call','Outgoing call initiated'); }
+function openSmsModal() { openSmsModalContext(viewingClientId); }
+function openSmsModalFromJob() { var j=jobs.find(x=>x.id===viewingJobId); if(j) openSmsModalContext(j.clientId); }
+
+function openSmsModalContext(cid) {
+  var c = getClientById(cid); if(!c) return;
+  smsTempClientId = c.id;
+  document.getElementById('sms-modal-sub').textContent = `To: ${c.name} (${c.phone||'No Phone'})`;
+  document.getElementById('sms-custom').value = '';
+  renderSmsTemplates(c); openModal('modal-sms');
+}
+
+function renderSmsTemplates(c) {
+  var el = document.getElementById('sms-template-list');
+  if(el) {
+    el.innerHTML = MESSAGE_TEMPLATES.map(t => `
+      <div class="template-card" onclick="document.getElementById('sms-custom').value=fillTemplate('${t.body.replace(/'/g, "\\'")}', ${JSON.stringify(c).replace(/"/g, '&quot;')})">
+        <div class="template-label">${t.icon} ${t.label}</div>
+        <div class="template-preview">${fillTemplate(t.body, c).slice(0, 60)}...</div>
+      </div>
+    `).join('');
+  }
+}
+
+async function sendCustomSms() {
+  var body = document.getElementById('sms-custom').value.trim();
+  if(!body) { showToast('⚠️ Text cannot be empty'); return; }
+  var c = getClientById(smsTempClientId); if(!c) return;
+  closeModal('modal-sms');
+  logComm(smsTempClientId, 'sms', body);
+  window.open(`sms:${c.phone||''}?&body=${encodeURIComponent(body)}`, '_blank');
+}
+
+function logNote() {
+  var inp = document.getElementById('cd-note-input');
+  var body = inp.value.trim(); if(!body) return;
+  logComm(viewingClientId, 'note', body); inp.value = '';
+}
+
+async function logComm(clientId, type, body) {
+  var data = { client_id: clientId, type, body, ts: tsNow() };
+  try { var row = await sbInsert('comms', data); comms.push(mapComm(row)); }
+  catch(e) { comms.push({ id: Date.now(), clientId, type, body, ts: tsNow() }); }
+  saveCache();
+  if(currentPage==='client-detail') renderClientDetail(clientId);
+  if(currentPage==='messages') renderMessages();
+  showToast(`✓ Logged ${type}`);
+}
+
 var bulkMode = false;
 var bulkSelected = new Set();
 
@@ -1066,7 +1208,8 @@ async function saveJob() {
 function renderJobs(filter) {
   filter=filter||''; var f=filter.toLowerCase();
   var list=jobs.filter(j=>{var c=getClientById(j.clientId);var cn=c?c.name:'';return cn.toLowerCase().includes(f)||j.service.toLowerCase().includes(f)||j.status.toLowerCase().includes(f);});
-  document.getElementById('jobs-sub').textContent=list.length+' job'+(list.length!==1?'s':'');
+  var sub = document.getElementById('jobs-sub');
+  if(sub) sub.textContent=list.length+' job'+(list.length!==1?'s':'');
   var el=document.getElementById('jobs-list');
   if(!list.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">🚗</div><div class="empty-text">'+(filter?'No match for "'+filter+'"':'No jobs yet.')+'</div></div>';return;}
   el.innerHTML=list.slice().reverse().map(j=>{
@@ -1125,6 +1268,44 @@ function confirmDeleteJob(){
     jobs=jobs.filter(x=>x.id!==viewingJobId);
     saveCache();showToast('✓ Job deleted');showPage('jobs');renderDashboard();
   });
+}
+
+// ══════════════════════════════════════════════════════
+// AUTOCOMPLETE CLIENT DROPDOWN FOR JOB MODAL
+// ══════════════════════════════════════════════════════
+function openClientDropdown() {
+  var dd = document.getElementById('client-dropdown');
+  if(dd) dd.classList.add('open');
+  filterClientDropdown(document.getElementById('mj-client-search').value);
+}
+function filterClientDropdown(val) {
+  var dd = document.getElementById('client-dropdown'); if(!dd) return;
+  var v = val.toLowerCase();
+  var matches = clients.filter(c => c.name.toLowerCase().includes(v));
+  if(!matches.length) {
+    dd.innerHTML = '<div class="client-opt" style="color:var(--muted)">No clients found</div>';
+    return;
+  }
+  dd.innerHTML = matches.map(c => `
+    <div class="client-opt" onmousedown="selectClientForJob(${c.id}, '${c.name.replace(/'/g, "\\'")}')">${c.name} ${c.vehicle?' ('+c.vehicle+')':''}</div>
+  `).join('');
+}
+function delayCloseDropdown() {
+  setTimeout(() => { var dd = document.getElementById('client-dropdown'); if(dd) dd.classList.remove('open'); }, 200);
+}
+function selectClientForJob(id, name) {
+  document.getElementById('mj-client-id').value = id;
+  document.getElementById('mj-client-search').value = name;
+  var c = getClientById(id);
+  if(c && c.vehicle) {
+    var parts = c.vehicle.trim().split(' ');
+    if(parts.length >= 3 && !isNaN(parts[0])) {
+      document.getElementById('mj-year').value = parts[0];
+      var make = parts[1]; document.getElementById('mj-make').value = make;
+      populateModels(make);
+      document.getElementById('mj-model').value = parts.slice(2).join(' ');
+    }
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -1217,11 +1398,16 @@ function renderMessages(){
   var recent=comms.slice().reverse().slice(0,30);
   var el=document.getElementById('msg-recent-log');
   var iconMap={call:'📞',sms:'💬',note:'📝'};
-  el.innerHTML=recent.length?recent.map(c=>{
-    var client=getClientById(c.clientId);
-    return`<div class="comm-item"><div class="comm-icon ${c.type}">${iconMap[c.type]||'📝'}</div><div class="comm-body"><div class="comm-type">${client?'<span style="font-weight:700;color:var(--text2)">'+client.name+'</span> · ':''}${c.type}</div><div class="comm-msg">${c.body}</div><div class="comm-time">${c.ts}</div></div></div>`;
-  }).join(''):'<div class="empty-state"><div class="empty-icon">💬</div><div class="empty-text">No communications yet.</div></div>';
-  document.getElementById('templates-list').innerHTML=MESSAGE_TEMPLATES.map(t=>`<div class="template-card"><div class="template-label">${t.icon} ${t.label}</div><div class="template-preview">${t.body.slice(0,100)}…</div><div class="template-actions"><button class="tpl-btn tpl-copy" onclick="copyTemplate('${t.id}')">📋 Copy</button><button class="tpl-btn tpl-sms" onclick="promptClientForTemplate('${t.id}')">💬 Send</button></div></div>`).join('');
+  if(el) {
+    el.innerHTML=recent.length?recent.map(c=>{
+      var client=getClientById(c.clientId);
+      return`<div class="comm-item"><div class="comm-icon ${c.type}">${iconMap[c.type]||'📝'}</div><div class="comm-body"><div class="comm-type">${client?'<span style="font-weight:700;color:var(--text2)">'+client.name+'</span> · ':''}${c.type}</div><div class="comm-msg">${c.body}</div><div class="comm-time">${c.ts}</div></div></div>`;
+    }).join(''):'<div class="empty-state"><div class="empty-icon">💬</div><div class="empty-text">No communications yet.</div></div>';
+  }
+  var tplList = document.getElementById('templates-list');
+  if(tplList) {
+    tplList.innerHTML=MESSAGE_TEMPLATES.map(t=>`<div class="template-card"><div class="template-label">${t.icon} ${t.label}</div><div class="template-preview">${t.body.slice(0,100)}…</div><div class="template-actions"><button class="tpl-btn tpl-copy" onclick="copyTemplate('${t.id}')">📋 Copy</button><button class="tpl-btn tpl-sms" onclick="promptClientForTemplate('${t.id}')">💬 Send</button></div></div>`).join('');
+  }
 }
 function copyTemplate(tid){
   var t=MESSAGE_TEMPLATES.find(x=>x.id===tid);if(!t)return;
@@ -1266,13 +1452,74 @@ function deleteExpense(id){
 }
 function renderMore(){
   var el=document.getElementById('expenses-list');
-  el.innerHTML=expenses.length?expenses.map(e=>`<div class="expense-row"><div><div class="expense-name">${e.name}</div><div class="expense-cat">${e.cat}${e.date?' · '+e.date:''}</div></div><div class="expense-right"><div class="expense-amount">-${fmt(e.amount)}</div><button class="del-btn" onclick="deleteExpense(${e.id})">Del</button></div></div>`).join(''):'<div class="empty-state"><div class="empty-icon">💸</div><div class="empty-text">No expenses yet. Tap + Exp.</div></div>';
+  if(el) el.innerHTML=expenses.length?expenses.map(e=>`<div class="expense-row"><div><div class="expense-name">${e.name}</div><div class="expense-cat">${e.cat}${e.date?' · '+e.date:''}</div></div><div class="expense-right"><div class="expense-amount">-${fmt(e.amount)}</div><button class="del-btn" onclick="deleteExpense(${e.id})">Del</button></div></div>`).join(''):'<div class="empty-state"><div class="empty-icon">💸</div><div class="empty-text">No expenses yet. Tap + Exp.</div></div>';
   var rev=jobs.filter(j=>j.status==='Complete').reduce((s,j)=>s+j.price,0);
   var exp=expenses.reduce((s,e)=>s+e.amount,0);
   var profit=rev-exp;
-  document.getElementById('sum-rev').textContent=fmt(rev);
-  document.getElementById('sum-exp').textContent=fmt(exp);
-  var sp=document.getElementById('sum-profit');sp.textContent=fmt(profit);sp.style.color=profit>=0?'var(--green)':'var(--red)';
+  var sRev = document.getElementById('sum-rev'); if(sRev) sRev.textContent=fmt(rev);
+  var sExp = document.getElementById('sum-exp'); if(sExp) sExp.textContent=fmt(exp);
+  var sp=document.getElementById('sum-profit'); if(sp) { sp.textContent=fmt(profit); sp.style.color=profit>=0?'var(--green)':'var(--red)'; }
+}
+
+// ══════════════════════════════════════════════════════
+// REPORTS RANGE ENGINE
+// ══════════════════════════════════════════════════════
+function setRange(range) {
+  reportRange = range;
+  document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+  var btn = document.getElementById('range-' + range); if(btn) btn.classList.add('active');
+  var customWrap = document.getElementById('custom-range');
+  if(customWrap) customWrap.style.display = range === 'custom' ? 'grid' : 'none';
+  renderReports();
+}
+function renderReports() {
+  var start = null, end = null; var now = new Date();
+  if (reportRange === 'week') {
+    var day = now.getDay(), diff = now.getDate() - day + (day == 0 ? -6 : 1);
+    start = new Date(now.setDate(diff)).toISOString().slice(0, 10); end = today();
+  } else if (reportRange === 'month') {
+    start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10); end = today();
+  } else if (reportRange === 'year') {
+    start = new Date(now.getFullYear(), 0, 1).toISOString().slice(0, 10); end = today();
+  } else if (reportRange === 'custom') {
+    start = document.getElementById('range-from').value; end = document.getElementById('range-to').value;
+  }
+  var lbl = document.getElementById('range-label'); if(lbl) lbl.textContent = start && end ? `Period: ${start} to ${end}` : 'Select date range';
+  
+  function inRange(dStr) { if(!dStr) return false; if(!start || !end) return true; return dStr >= start && dStr <= end; }
+  
+  var periodJobs = jobs.filter(j => j.status === 'Complete' && inRange(j.date));
+  var periodExpenses = expenses.filter(e => inRange(e.date));
+  var rev = periodJobs.reduce((s, j) => s + j.price, 0);
+  var exp = periodExpenses.reduce((s, e) => s + e.amount, 0);
+  var profit = rev - exp; var avg = periodJobs.length ? rev / periodJobs.length : 0;
+  
+  document.getElementById('r-revenue').textContent = fmt(rev);
+  document.getElementById('r-revenue-sub').textContent = periodJobs.length + ' job' + (periodJobs.length !== 1 ? 's' : '');
+  document.getElementById('r-expenses').textContent = fmt(exp);
+  document.getElementById('r-expenses-sub').textContent = periodExpenses.length + ' item' + (periodExpenses.length !== 1 ? 's' : '');
+  var rp = document.getElementById('r-profit'); rp.textContent = fmt(profit); rp.style.color = profit >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('r-avg').textContent = fmt(avg);
+  
+  var sMap = {}; periodJobs.forEach(j => sMap[j.service] = (sMap[j.service] || 0) + j.price);
+  document.getElementById('r-by-service').innerHTML = Object.keys(sMap).length ? Object.keys(sMap).map(k => `
+    <div class="report-bar-row"><div class="report-bar-label"><span>${k}</span><b>${fmt(sMap[k])}</b></div><div class="report-bar-track"><div class="report-bar-fill" style="width:${rev ? (sMap[k]/rev*100) : 0}%"></div></div></div>
+  `).join('') : '<div class="empty-state"><div class="empty-text">No completed jobs in this period</div></div>';
+  
+  var eMap = {}; periodExpenses.forEach(e => eMap[e.cat] = (eMap[e.cat] || 0) + e.amount);
+  document.getElementById('r-by-category').innerHTML = Object.keys(eMap).length ? Object.keys(eMap).map(k => `
+    <div class="report-bar-row"><div class="report-bar-label"><span>${k}</span><b>${fmt(eMap[k])}</b></div><div class="report-bar-track"><div class="report-bar-fill" style="width:${exp ? (eMap[k]/exp*100) : 0}%; background:var(--red)"></div></div></div>
+  `).join('') : '<div class="empty-state"><div class="empty-text">No expenses in this period</div></div>';
+
+  document.getElementById('r-completed-jobs').innerHTML = periodJobs.length ? periodJobs.map(j => {
+    var c = getClientById(j.clientId); return `<div class="job-row"><div class="job-info"><div class="job-name">${c?c.name:'Unknown'}</div><div class="job-meta">${j.date} · ${j.service}</div></div><div class="job-right"><div class="job-price">${fmt(j.price)}</div></div></div>`;
+  }).join('') : '<div class="empty-state"><div class="empty-text">No completed jobs in this period</div></div>';
+
+  var tcMap = {}; periodJobs.forEach(j => tcMap[j.clientId] = (tcMap[j.clientId] || 0) + j.price);
+  var tcList = Object.keys(tcMap).map(cid => ({ c: getClientById(parseInt(cid)), total: tcMap[cid] })).sort((a,b)=>b.total-a.total).slice(0,3);
+  document.getElementById('r-top-clients').innerHTML = tcList.length ? tcList.map(x => x.c ? `
+    <div class="list-row"><div class="avatar">${initials(x.c.name)}</div><div class="row-info"><div class="row-name">${x.c.name}</div><div class="row-sub">${x.c.vehicle||'No vehicle'}</div></div><div class="row-right"><div class="row-value">${fmt(x.total)}</div></div></div>` : ''
+  ).join('') : '<div class="empty-state"><div class="empty-text">No completed jobs in this period</div></div>';
 }
 
 // ══════════════════════════════════════════════════════
@@ -1296,7 +1543,6 @@ function renderDashboard(){
     if(el) el.textContent=counts[i];
   });
   
-  // Isolate and sort active timeline sequences chromatically (Ascending by Date then Time)
   var upcoming = jobs.filter(j => j.status === 'Booked' || j.status === 'In Progress')
                      .sort((a, b) => {
                        if ((a.date || '') !== (b.date || '')) return (a.date || '').localeCompare(b.date || '');
@@ -1341,25 +1587,12 @@ async function importData(event){
       var toImportClients=d.clients||[];
       var toImportJobs=d.jobs||[];
       var toImportExpenses=d.expenses||[];
-      var toImportComms=d.comms||[];
-      showToast('Importing to cloud...');
-      setSyncStatus('syncing','Importing...');
-      for(var c of toImportClients){
-        var {id,...rest}=c;
-        try{var row=await sbInsert('clients',rest);clients.push(mapClient(row));}catch(err){}
-      }
-      for(var j of toImportJobs){
-        var {id,clientId,photos,...rest}=j;
-        try{var row=await sbInsert('jobs',{...rest,client_id:clientId});jobs.push(mapJob(row));}catch(err){}
-      }
-      for(var ex of toImportExpenses){
-        var {id,...rest}=ex;
-        try{var row=await sbInsert('expenses',rest);expenses.push(mapExpense(row));}catch(err){}
-      }
-      saveCache();
-      setSyncStatus('online','Import complete');
-      showToast('✓ Data imported to cloud!');
-      renderDashboard();refreshCurrentPage();
+      showToast('Importing to cloud...'); setSyncStatus('syncing','Importing...');
+      for(var c of toImportClients){ var {id,...rest}=c; try{var row=await sbInsert('clients',rest);clients.push(mapClient(row));}catch(err){} }
+      for(var j of toImportJobs){ var {id,clientId,photos,...rest}=j; try{var row=await sbInsert('jobs',{...rest,client_id:clientId});jobs.push(mapJob(row));}catch(err){} }
+      for(var ex of toImportExpenses){ var {id,...rest}=ex; try{var row=await sbInsert('expenses',rest);expenses.push(mapExpense(row));}catch(err){} }
+      saveCache(); setSyncStatus('online','Import complete'); showToast('✓ Data imported to cloud!');
+      renderDashboard(); refreshCurrentPage();
     }catch(err){showToast('⚠️ Invalid backup file');}
     event.target.value='';
   };
@@ -1379,6 +1612,7 @@ document.getElementById('btn-add-expense').onclick=()=>{document.getElementById(
 async function boot(){
   document.getElementById('loading-msg').textContent='Loading local data...';
   loadCache();
+  setRange('week');
   renderDashboard();
   document.getElementById('mj-date').value=today();
   document.getElementById('me-date').value=today();
@@ -1386,7 +1620,6 @@ async function boot(){
   await fullSync();
   document.getElementById('loading-screen').style.display='none';
 }
-
 
 // ══════════════════════════════════════════════════════
 // PARSING SUBSYSTEM (CSV INTEGRATION)
@@ -1412,13 +1645,8 @@ function importCSV(event) {
 function parseCSV(text) {
   var lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l=>l.trim());
   if(lines.length < 2) return [];
-
   var headers = parseCSVRow(lines[0]).map(h=>h.trim().toLowerCase());
-
-  function findCol(names) {
-    for(var n of names) { var i=headers.indexOf(n); if(i>-1) return i; }
-    return -1;
-  }
+  function findCol(names) { for(var n of names) { var i=headers.indexOf(n); if(i>-1) return i; } return -1; }
   var colName      = findCol(['name','full name','display name','contact name']);
   var colFirst     = findCol(['first name','given name','firstname']);
   var colLast      = findCol(['last name','family name','surname','lastname']);
@@ -1432,28 +1660,19 @@ function parseCSV(text) {
   for(var i=1; i<lines.length; i++) {
     var row = parseCSVRow(lines[i]);
     if(!row.length || row.every(c=>!c.trim())) continue;
-
     var name = '';
-    if(colName > -1 && row[colName] && row[colName].trim()) {
-      name = row[colName].trim();
-    } else if(colFirst > -1 || colLast > -1) {
+    if(colName > -1 && row[colName] && row[colName].trim()) { name = row[colName].trim(); }
+    else if(colFirst > -1 || colLast > -1) {
       var fn = colFirst>-1 ? (row[colFirst]||'').trim() : '';
       var ln = colLast>-1  ? (row[colLast]||'').trim()  : '';
       name = [fn,ln].filter(Boolean).join(' ');
     }
     if(!name) continue;
-
     var phone = '';
     if(colPhone>-1 && row[colPhone]) phone = row[colPhone].trim();
     else if(colPhone2>-1 && row[colPhone2]) phone = row[colPhone2].trim();
 
-    contacts.push({
-      name,
-      phone,
-      email:   colEmail>-1   ? (row[colEmail]||'').trim()   : '',
-      vehicle: colVehicle>-1 ? (row[colVehicle]||'').trim() : '',
-      notes:   colNotes>-1   ? (row[colNotes]||'').trim()   : '',
-    });
+    contacts.push({ name, phone, email: colEmail>-1 ? (row[colEmail]||'').trim() : '', vehicle: colVehicle>-1 ? (row[colVehicle]||'').trim() : '', notes: colNotes>-1 ? (row[colNotes]||'').trim() : '' });
   }
   return contacts;
 }
@@ -1487,32 +1706,22 @@ function showCSVPreview() {
 
 async function confirmCSVImport() {
   closeModal('modal-csv-preview');
-  var total = csvParsedContacts.length;
-  var done = 0;
+  var total = csvParsedContacts.length; var done = 0;
   setSyncStatus('syncing', 'Importing ' + total + ' contacts...');
   showToast('Importing ' + total + ' contacts...');
 
   for(var c of csvParsedContacts) {
     var data = { name: c.name, vehicle: c.vehicle||'', phone: c.phone||'', email: c.email||'', notes: c.notes||'' };
-    try {
-      var row = await sbInsert('clients', data);
-      clients.push(mapClient(row));
-    } catch(err) {
-      data.id = Date.now() + Math.random();
-      clients.push(data);
-    }
+    try { var row = await sbInsert('clients', data); clients.push(mapClient(row)); }
+    catch(err) { data.id = Date.now() + Math.random(); clients.push(data); }
     done++;
     if(done % 5 === 0) document.getElementById('footer-status').textContent = 'Imported ' + done + '/' + total + '...';
   }
 
-  saveCache();
-  setSyncStatus('online', 'Imported ' + total + ' contacts!');
-  showToast('✓ ' + total + ' contacts imported!');
-  renderDashboard();
-  if(currentPage==='clients') renderClients();
+  saveCache(); setSyncStatus('online', 'Imported ' + total + ' contacts!'); showToast('✓ ' + total + ' contacts imported!');
+  renderDashboard(); if(currentPage==='clients') renderClients();
   csvParsedContacts = [];
 }
-
 
 // ══════════════════════════════════════════════════════
 // VEHICLE DATA SCHEMA
@@ -1564,138 +1773,75 @@ var VEHICLE_DATA = {
 };
 
 function populateYears() {
-  var sel = document.getElementById('mj-year');
-  var current = new Date().getFullYear();
-  sel.innerHTML = '<option value="">Select year...</option>';
-  for(var y = current + 1; y >= 1990; y--) {
-    sel.innerHTML += '<option value="' + y + '">' + y + '</option>';
-  }
+  var sel = document.getElementById('mj-year'); var current = new Date().getFullYear();
+  if(!sel) return; sel.innerHTML = '<option value="">Select year...</option>';
+  for(var y = current + 1; y >= 1990; y--) { sel.innerHTML += '<option value="' + y + '">' + y + '</option>'; }
 }
 
 function populateMakes() {
-  var sel = document.getElementById('mj-make');
+  var sel = document.getElementById('mj-make'); if(!sel) return;
   sel.innerHTML = '<option value="">Select make...</option>';
-  Object.keys(VEHICLE_DATA).sort().forEach(function(make) {
-    sel.innerHTML += '<option value="' + make + '">' + make + '</option>';
-  });
+  Object.keys(VEHICLE_DATA).sort().forEach(function(make) { sel.innerHTML += '<option value="' + make + '">' + make + '</option>'; });
 }
 
 function populateModels(preselect) {
   var make = preselect || document.getElementById('mj-make').value;
-  var sel = document.getElementById('mj-model');
-  sel.innerHTML = '<option value="">Select model...</option>';
-  if(!make || !VEHICLE_DATA[make]) return;
-  VEHICLE_DATA[make].forEach(function(model) {
-    sel.innerHTML += '<option value="' + model + '">' + model + '</option>';
-  });
+  var sel = document.getElementById('mj-model'); if(!sel) return;
+  sel.innerHTML = '<option value="">Select model...</option>'; if(!make || !VEHICLE_DATA[make]) return;
+  VEHICLE_DATA[make].forEach(function(model) { sel.innerHTML += '<option value="' + model + '">' + model + '</option>'; });
 }
-
 
 // ══════════════════════════════════════════════════════
 // NEW LEAD CAPTURE
 // ══════════════════════════════════════════════════════
 function openNewLeadModal() {
-  ['nl-name','nl-phone','nl-email','nl-notes','nl-price'].forEach(id=>{
-    var el=document.getElementById(id); if(el) el.value='';
-  });
-  document.getElementById('nl-service').value='';
-  document.getElementById('nl-date').value=today();
-  document.getElementById('nl-time').value='';
-  var yearSel=document.getElementById('nl-year');
-  var makeSel=document.getElementById('nl-make');
-  var cur=new Date().getFullYear();
-  yearSel.innerHTML='<option value="">Select year...</option>';
-  for(var y=cur+1;y>=1990;y--) yearSel.innerHTML+=`<option value="${y}">${y}</option>`;
-  makeSel.innerHTML='<option value="${m}"></option>';
-  makeSel.innerHTML='<option value="">Select make...</option>';
-  Object.keys(VEHICLE_DATA).sort().forEach(m=>makeSel.innerHTML+=`<option value="${m}">${m}</option>`);
+  ['nl-name','nl-phone','nl-email','nl-notes','nl-price'].forEach(id=>{ var el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('nl-service').value=''; document.getElementById('nl-date').value=today(); document.getElementById('nl-time').value='';
+  var yearSel=document.getElementById('nl-year'); var makeSel=document.getElementById('nl-make'); var cur=new Date().getFullYear();
+  yearSel.innerHTML='<option value="">Select year...</option>'; for(var y=cur+1;y>=1990;y--) yearSel.innerHTML+=`<option value="${y}">${y}</option>`;
+  makeSel.innerHTML='<option value="">Select make...</option>'; Object.keys(VEHICLE_DATA).sort().forEach(m=>makeSel.innerHTML+=`<option value="${m}">${m}</option>`);
   document.getElementById('nl-model').innerHTML='<option value="">Select model...</option>';
-  document.getElementById('lead-step-1').style.display='block';
-  document.getElementById('lead-step-2').style.display='none';
-  document.getElementById('lstep-1').className='lead-step active';
-  document.getElementById('lstep-2').className='lead-step';
+  document.getElementById('lead-step-1').style.display='block'; document.getElementById('lead-step-2').style.display='none';
+  document.getElementById('lstep-1').className='lead-step active'; document.getElementById('lstep-2').className='lead-step';
   openModal('modal-new-lead');
 }
 
 function populateLeadModels() {
-  var make=document.getElementById('nl-make').value;
-  var sel=document.getElementById('nl-model');
-  sel.innerHTML='<option value="">Select model...</option>';
-  if(make&&VEHICLE_DATA[make]) VEHICLE_DATA[make].forEach(m=>sel.innerHTML+=`<option value="${m}">${m}</option>`);
+  var make=document.getElementById('nl-make').value; var sel=document.getElementById('nl-model');
+  sel.innerHTML='<option value="">Select model...</option>'; if(make&&VEHICLE_DATA[make]) VEHICLE_DATA[make].forEach(m=>sel.innerHTML+=`<option value="${m}">${m}</option>`);
 }
 
 function leadStep2() {
-  var name=document.getElementById('nl-name').value.trim();
-  if(!name){showToast('⚠️ Name is required');return;}
-  document.getElementById('lead-step-1').style.display='none';
-  document.getElementById('lead-step-2').style.display='block';
-  document.getElementById('lstep-1').className='lead-step done';
-  document.getElementById('lstep-2').className='lead-step active';
+  var name=document.getElementById('nl-name').value.trim(); if(!name){showToast('⚠️ Name is required');return;}
+  document.getElementById('lead-step-1').style.display='none'; document.getElementById('lead-step-2').style.display='block';
+  document.getElementById('lstep-1').className='lead-step done'; document.getElementById('lstep-2').className='lead-step active';
 }
 
 function leadBack() {
-  document.getElementById('lead-step-2').style.display='none';
-  document.getElementById('lead-step-1').style.display='block';
-  document.getElementById('lstep-1').className='lead-step active';
-  document.getElementById('lstep-2').className='lead-step';
+  document.getElementById('lead-step-2').style.display='none'; document.getElementById('lead-step-1').style.display='block';
+  document.getElementById('lstep-1').className='lead-step active'; document.getElementById('lstep-2').className='lead-step';
 }
 
 async function saveNewLead() {
-  var name    = document.getElementById('nl-name').value.trim();
-  var service = document.getElementById('nl-service').value;
-  if(!name)    {showToast('⚠️ Name is required');return;}
-  if(!service) {showToast('⚠️ Please select a service');return;}
+  var name = document.getElementById('nl-name').value.trim(); var service = document.getElementById('nl-service').value;
+  if(!name) {showToast('⚠️ Name is required');return;} if(!service) {showToast('⚠️ Please select a service');return;}
+  var phone = document.getElementById('nl-phone').value.trim(); var email = document.getElementById('nl-email').value.trim();
+  var notes = document.getElementById('nl-notes').value.trim(); var year = document.getElementById('nl-year').value;
+  var make = document.getElementById('nl-make').value; var model = document.getElementById('nl-model').value;
+  var price = parseFloat(document.getElementById('nl-price').value)||0; var date = document.getElementById('nl-date').value||today();
+  var appointmentTime = document.getElementById('nl-time').value; var veh = [year,make,model].filter(Boolean).join(' ');
 
-  var phone   = document.getElementById('nl-phone').value.trim();
-  var email   = document.getElementById('nl-email').value.trim();
-  var notes   = document.getElementById('nl-notes').value.trim();
-  var year    = document.getElementById('nl-year').value;
-  var make    = document.getElementById('nl-make').value;
-  var model   = document.getElementById('nl-model').value;
-  var price   = parseFloat(document.getElementById('nl-price').value)||0;
-  var date    = document.getElementById('nl-date').value||today();
-  var appointmentTime = document.getElementById('nl-time').value;
-  var veh     = [year,make,model].filter(Boolean).join(' ');
-
-  closeModal('modal-new-lead');
-  setSyncStatus('syncing','Saving lead...');
-
+  closeModal('modal-new-lead'); setSyncStatus('syncing','Saving lead...');
   try {
-    var clientRow = await sbInsert('clients',{name,phone,email,vehicle:veh,notes});
-    var newClient = mapClient(clientRow);
-    clients.push(newClient);
-
-    var jobRow = await sbInsert('jobs',{
-      client_id: newClient.id, 
-      service, 
-      price, 
-      status: 'Lead',
-      date, 
-      appointment_time: appointmentTime,
-      notes: '', 
-      vehicle_year: year ? parseInt(year) : null, 
-      vehicle_make: make || null, 
-      vehicle_model: model || null
-    });
-    var newJob = mapJob(jobRow);
-    jobs.push(newJob);
-
-    saveCache();
-    setSyncStatus('online','Lead saved!');
-    showToast('🎯 Lead captured — '+name);
-    renderDashboard();
-    renderPipeline();
-    
-    setTimeout(()=>viewJob(newJob.id), 400);
-
+    var clientRow = await sbInsert('clients',{name,phone,email,vehicle:veh,notes}); var newClient = mapClient(clientRow); clients.push(newClient);
+    var jobRow = await sbInsert('jobs',{ client_id: newClient.id, service, price, status: 'Lead', date, appointment_time: appointmentTime, notes: '', vehicle_year: year ? parseInt(year) : null, vehicle_make: make || null, vehicle_model: model || null });
+    var newJob = mapJob(jobRow); jobs.push(newJob);
+    saveCache(); setSyncStatus('online','Lead saved!'); showToast('🎯 Lead captured — '+name);
+    renderDashboard(); renderPipeline(); setTimeout(()=>viewJob(newJob.id), 400);
   } catch(err) {
-    alert("🔴 NEW LEAD CAPTURE REJECTED:\n" + err.message);
-    var cid = Date.now();
-    clients.push({id:cid,name,phone,email,vehicle:veh,notes});
+    var cid = Date.now(); clients.push({id:cid,name,phone,email,vehicle:veh,notes});
     jobs.push({id:cid+1,clientId:cid,service,price,status:'Lead',date,appointmentTime,notes:'',vehicleYear:year,vehicleMake:make,vehicleModel:model,photos:[]});
-    saveCache();
-    setSyncStatus('offline','Saved locally');
-    showToast('⚠️ Cloud save failed — preserved locally');
+    saveCache(); setSyncStatus('offline','Saved locally'); showToast('⚠️ Saved locally');
     renderDashboard(); renderPipeline();
   }
 }
@@ -1704,29 +1850,16 @@ async function saveNewLead() {
 // CONVERT LEAD
 // ══════════════════════════════════════════════════════
 function showConvertButton(job) {
-  var wrap = document.getElementById('jd-convert-wrap');
-  if(!wrap) return;
-  if(job.status === 'Lead') {
-    wrap.innerHTML = `<button class="convert-btn" onclick="openConvertModal()">⚡ Convert This Lead</button>`;
-  } else {
-    wrap.innerHTML = '';
-  }
+  var wrap = document.getElementById('jd-convert-wrap'); if(!wrap) return;
+  if(job.status === 'Lead') { wrap.innerHTML = `<button class="convert-btn" onclick="openConvertModal()">⚡ Convert This Lead</button>`; }
+  else { wrap.innerHTML = ''; }
 }
 
 function openConvertModal() {
   var j = jobs.find(x=>x.id===viewingJobId); if(!j) return;
-  var c = getClientById(j.clientId);
-  document.getElementById('convert-sub').textContent =
-    (c?c.name:'This lead')+' — '+j.service+' · '+fmt(j.price);
-
-  var nextStatuses = ['Quoted','Booked','In Progress','Complete'];
-  var icons = {Quoted:'💰',Booked:'✅','In Progress':'🔧',Complete:'🌟'};
-  var descs = {
-    Quoted:      'Send them a quote to review',
-    Booked:      'They said yes — appointment confirmed',
-    'In Progress':'Job is actively being worked on',
-    Complete:    'Job is finished — collect payment'
-  };
+  var c = getClientById(j.clientId); document.getElementById('convert-sub').textContent = (c?c.name:'This lead')+' — '+j.service+' · '+fmt(j.price);
+  var nextStatuses = ['Quoted','Booked','In Progress','Complete']; var icons = {Quoted:'💰',Booked:'✅','In Progress':'🔧',Complete:'🌟'};
+  var descs = { Quoted: 'Send them a quote to review', Booked: 'They said yes — appointment confirmed', 'In Progress':'Job is actively being worked on', Complete: 'Job is finished — collect payment' };
   document.getElementById('convert-options').innerHTML = nextStatuses.map(s=>`
     <div onclick="convertLeadTo('${s}')" style="padding:14px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:12px;">
       <span style="font-size:22px;">${icons[s]}</span>
@@ -1740,20 +1873,15 @@ function openConvertModal() {
 
 async function convertLeadTo(status) {
   var j = jobs.find(x=>x.id===viewingJobId); if(!j) return;
-  j.status = status;
-  closeModal('modal-convert');
+  j.status = status; closeModal('modal-convert');
   try { await sbUpdate('jobs', j.id, {status}); } catch(e){}
-  saveCache();
-  showToast('✅ Lead converted to '+status+'!');
-  renderJobDetail(viewingJobId);
-  renderDashboard(); renderPipeline();
+  saveCache(); showToast('✅ Lead converted to '+status+'!');
+  renderJobDetail(viewingJobId); renderDashboard(); renderPipeline();
   if(status==='Complete') {
     var c = getClientById(j.clientId);
     if(c&&c.phone) {
-      smsTempClientId=c.id;
-      document.getElementById('sms-modal-sub').textContent='Job complete! Text '+c.name+'?';
-      renderSmsTemplates(c);
-      var ct=MESSAGE_TEMPLATES.find(t=>t.id==='complete');
+      smsTempClientId=c.id; document.getElementById('sms-modal-sub').textContent='Job complete! Text '+c.name+'?';
+      renderSmsTemplates(c); var ct=MESSAGE_TEMPLATES.find(t=>t.id==='complete');
       if(ct) document.getElementById('sms-custom').value=fillTemplate(ct.body,c);
       setTimeout(()=>openModal('modal-sms'),400);
     }
@@ -1793,7 +1921,6 @@ boot();
     </div>
   </div>
 </div>
-
 
 <div class="overlay" id="modal-new-lead">
   <div class="modal">
