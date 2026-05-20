@@ -198,6 +198,13 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 .status-tile.booked .status-tile-num{color:#ccc;}
 .status-tile.progress .status-tile-num{color:var(--orange);}
 .status-tile.complete .status-tile-num{color:var(--green);}
+.convert-btn{width:100%;padding:13px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;}
+.convert-btn:active{opacity:.85;}
+.new-lead-btn{display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid rgba(76,175,80,.3);background:rgba(76,175,80,.1);color:var(--green);font-family:'DM Sans',sans-serif;}
+.lead-steps{display:flex;gap:6px;margin-bottom:16px;}
+.lead-step{flex:1;height:3px;border-radius:3px;background:var(--border);}
+.lead-step.done{background:var(--green);}
+.lead-step.active{background:var(--text);}
 .loading-screen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
 .loading-logo{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:2px;}
 .loading-sub{font-size:13px;color:var(--muted);}
@@ -324,6 +331,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="photo-add" onclick="triggerPhotoUpload()" style="margin-top:8px;">＋</div>
     <input type="file" id="photo-file-input" accept="image/*" multiple style="display:none">
   </div>
+  <div id="jd-convert-wrap"></div>
   <div style="display:flex;gap:8px;">
     <button class="hbtn" style="flex:1;padding:12px;font-size:13px;" onclick="editJob()">✏️ Edit</button>
     <button class="hbtn" style="flex:1;padding:12px;font-size:13px;color:var(--red);border-color:rgba(244,67,54,.3);" onclick="confirmDeleteJob()">🗑 Delete</button>
@@ -332,7 +340,10 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 
 <!-- PIPELINE -->
 <div class="page" id="page-pipeline">
-  <div class="page-hdr"><div><div class="page-title">Pipeline</div><div class="page-sub">All job stages</div></div></div>
+  <div class="page-hdr">
+    <div><div class="page-title">Pipeline</div><div class="page-sub">All job stages</div></div>
+    <button class="new-lead-btn" onclick="openNewLeadModal()">＋ New Lead</button>
+  </div>
   <!-- Status count tiles -->
   <div class="status-grid">
     <div class="status-tile lead"     onclick="filterPipeline('Lead')">       <div class="status-tile-num" id="pt-lead">0</div>     <div class="status-tile-lbl">Lead</div></div>
@@ -1199,6 +1210,7 @@ function renderJobDetail(id){
   document.getElementById('jd-date').textContent=j.date||'—';
   document.getElementById('jd-notes').textContent=j.notes||'—';
   renderJobPhotos(j);
+  showConvertButton(j);
 }
 function changeJobStatus(){
   var j=jobs.find(x=>x.id===viewingJobId);if(!j)return;
@@ -1834,6 +1846,171 @@ function renderReports() {
     : '<div class="empty-state"><div class="empty-text">No completed jobs in this period</div></div>';
 }
 
+
+// ══════════════════════════════════════════════════════
+// NEW LEAD CAPTURE
+// ══════════════════════════════════════════════════════
+function openNewLeadModal() {
+  // Reset all fields
+  ['nl-name','nl-phone','nl-email','nl-notes','nl-price'].forEach(id=>{
+    var el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('nl-service').value='';
+  document.getElementById('nl-date').value=today();
+  // Populate vehicle dropdowns
+  var yearSel=document.getElementById('nl-year');
+  var makeSel=document.getElementById('nl-make');
+  var cur=new Date().getFullYear();
+  yearSel.innerHTML='<option value="">Select year...</option>';
+  for(var y=cur+1;y>=1990;y--) yearSel.innerHTML+=`<option value="${y}">${y}</option>`;
+  makeSel.innerHTML='<option value="">Select make...</option>';
+  Object.keys(VEHICLE_DATA).sort().forEach(m=>makeSel.innerHTML+=`<option value="${m}">${m}</option>`);
+  document.getElementById('nl-model').innerHTML='<option value="">Select model...</option>';
+  // Show step 1
+  document.getElementById('lead-step-1').style.display='block';
+  document.getElementById('lead-step-2').style.display='none';
+  document.getElementById('lstep-1').className='lead-step active';
+  document.getElementById('lstep-2').className='lead-step';
+  openModal('modal-new-lead');
+}
+
+function populateLeadModels() {
+  var make=document.getElementById('nl-make').value;
+  var sel=document.getElementById('nl-model');
+  sel.innerHTML='<option value="">Select model...</option>';
+  if(make&&VEHICLE_DATA[make]) VEHICLE_DATA[make].forEach(m=>sel.innerHTML+=`<option value="${m}">${m}</option>`);
+}
+
+function leadStep2() {
+  var name=document.getElementById('nl-name').value.trim();
+  if(!name){showToast('⚠️ Name is required');return;}
+  document.getElementById('lead-step-1').style.display='none';
+  document.getElementById('lead-step-2').style.display='block';
+  document.getElementById('lstep-1').className='lead-step done';
+  document.getElementById('lstep-2').className='lead-step active';
+}
+
+function leadBack() {
+  document.getElementById('lead-step-2').style.display='none';
+  document.getElementById('lead-step-1').style.display='block';
+  document.getElementById('lstep-1').className='lead-step active';
+  document.getElementById('lstep-2').className='lead-step';
+}
+
+async function saveNewLead() {
+  var name    = document.getElementById('nl-name').value.trim();
+  var service = document.getElementById('nl-service').value;
+  if(!name)    {showToast('⚠️ Name is required');return;}
+  if(!service) {showToast('⚠️ Please select a service');return;}
+
+  var phone   = document.getElementById('nl-phone').value.trim();
+  var email   = document.getElementById('nl-email').value.trim();
+  var notes   = document.getElementById('nl-notes').value.trim();
+  var year    = document.getElementById('nl-year').value;
+  var make    = document.getElementById('nl-make').value;
+  var model   = document.getElementById('nl-model').value;
+  var price   = parseFloat(document.getElementById('nl-price').value)||0;
+  var date    = document.getElementById('nl-date').value||today();
+  var veh     = [year,make,model].filter(Boolean).join(' ');
+
+  closeModal('modal-new-lead');
+  setSyncStatus('syncing','Saving lead...');
+
+  try {
+    // 1. Create client
+    var clientRow = await sbInsert('clients',{name,phone,email,vehicle:veh,notes});
+    var newClient = mapClient(clientRow);
+    clients.push(newClient);
+
+    // 2. Create job as Lead
+    var jobRow = await sbInsert('jobs',{
+      client_id:newClient.id, service, price, status:'Lead',
+      date, notes:'', vehicle_year:year, vehicle_make:make, vehicle_model:model
+    });
+    var newJob = mapJob(jobRow);
+    jobs.push(newJob);
+
+    saveCache();
+    setSyncStatus('online','Lead saved!');
+    showToast('🎯 Lead captured — '+name);
+    renderDashboard();
+    renderPipeline();
+    // Open the new job so they can act on it right away
+    setTimeout(()=>viewJob(newJob.id), 400);
+
+  } catch(err) {
+    // Offline fallback
+    var cid = Date.now();
+    clients.push({id:cid,name,phone,email,vehicle:veh,notes});
+    jobs.push({id:cid+1,clientId:cid,service,price,status:'Lead',date,notes:'',vehicleYear:year,vehicleMake:make,vehicleModel:model,photos:[]});
+    saveCache();
+    setSyncStatus('offline','Saved locally');
+    showToast('🎯 Lead saved locally');
+    renderDashboard(); renderPipeline();
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// CONVERT LEAD
+// ══════════════════════════════════════════════════════
+function showConvertButton(job) {
+  var wrap = document.getElementById('jd-convert-wrap');
+  if(!wrap) return;
+  if(job.status === 'Lead') {
+    wrap.innerHTML = `<button class="convert-btn" onclick="openConvertModal()">⚡ Convert This Lead</button>`;
+  } else {
+    wrap.innerHTML = '';
+  }
+}
+
+function openConvertModal() {
+  var j = jobs.find(x=>x.id===viewingJobId); if(!j) return;
+  var c = getClientById(j.clientId);
+  document.getElementById('convert-sub').textContent =
+    (c?c.name:'This lead')+' — '+j.service+' · '+fmt(j.price);
+
+  var nextStatuses = ['Quoted','Booked','In Progress','Complete'];
+  var icons = {Quoted:'💰',Booked:'✅','In Progress':'🔧',Complete:'🌟'};
+  var descs = {
+    Quoted:      'Send them a quote to review',
+    Booked:      'They said yes — appointment confirmed',
+    'In Progress':'Job is actively being worked on',
+    Complete:    'Job is finished — collect payment'
+  };
+  document.getElementById('convert-options').innerHTML = nextStatuses.map(s=>`
+    <div onclick="convertLeadTo('${s}')" style="padding:14px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:12px;">
+      <span style="font-size:22px;">${icons[s]}</span>
+      <div>
+        <div style="font-size:14px;font-weight:700;">${s}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">${descs[s]}</div>
+      </div>
+    </div>`).join('');
+  openModal('modal-convert');
+}
+
+async function convertLeadTo(status) {
+  var j = jobs.find(x=>x.id===viewingJobId); if(!j) return;
+  j.status = status;
+  closeModal('modal-convert');
+  try { await sbUpdate('jobs', j.id, {status}); } catch(e){}
+  saveCache();
+  showToast('✅ Lead converted to '+status+'!');
+  renderJobDetail(viewingJobId);
+  renderDashboard(); renderPipeline();
+  // If marking complete, prompt to text client
+  if(status==='Complete') {
+    var c = getClientById(j.clientId);
+    if(c&&c.phone) {
+      smsTempClientId=c.id;
+      document.getElementById('sms-modal-sub').textContent='Job complete! Text '+c.name+'?';
+      renderSmsTemplates(c);
+      var ct=MESSAGE_TEMPLATES.find(t=>t.id==='complete');
+      if(ct) document.getElementById('sms-custom').value=fillTemplate(ct.body,c);
+      setTimeout(()=>openModal('modal-sms'),400);
+    }
+  }
+}
+
 boot();
 </script>
 
@@ -1866,6 +2043,71 @@ boot();
     </div>
     <div class="modal-actions">
       <button class="btn btn-primary" onclick="closeModal('modal-csv-help')">Got It</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- NEW LEAD MODAL -->
+<div class="overlay" id="modal-new-lead">
+  <div class="modal">
+    <div class="modal-title">New Lead</div>
+    <div class="modal-sub">Capture a new lead — client + job in one shot</div>
+    <!-- Step indicators -->
+    <div class="lead-steps">
+      <div class="lead-step active" id="lstep-1"></div>
+      <div class="lead-step" id="lstep-2"></div>
+    </div>
+    <!-- Step 1: Client Info -->
+    <div id="lead-step-1">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">Step 1 of 2 — Contact Info</div>
+      <div class="field"><label>Full Name *</label><input id="nl-name" placeholder="e.g. John Smith" autocomplete="off"></div>
+      <div class="field"><label>Phone</label><input id="nl-phone" placeholder="(555) 000-0000" type="tel"></div>
+      <div class="field"><label>Email</label><input id="nl-email" placeholder="email@example.com" type="email"></div>
+      <div class="field"><label>Notes</label><textarea id="nl-notes" placeholder="How did they find you? Any details..." style="min-height:60px;"></textarea></div>
+      <div class="modal-actions">
+        <button class="btn btn-cancel" onclick="closeModal('modal-new-lead')">Cancel</button>
+        <button class="btn btn-primary" onclick="leadStep2()">Next →</button>
+      </div>
+    </div>
+    <!-- Step 2: Job Info -->
+    <div id="lead-step-2" style="display:none;">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">Step 2 of 2 — Job Details</div>
+      <div class="field"><label>Service *</label>
+        <select id="nl-service">
+          <option value="">Select a service...</option>
+          <option value="Refresh">Refresh</option>
+          <option value="Signature">Signature</option>
+          <option value="Elite">Elite</option>
+          <option value="PPF">PPF</option>
+          <option value="Wrap">Wrap</option>
+          <option value="Ceramic">Ceramic</option>
+          <option value="Paint Correction">Paint Correction</option>
+          <option value="Spot Paint Repair">Spot Paint Repair</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Vehicle Year</label><select id="nl-year"><option value="">Select year...</option></select></div>
+      <div class="field"><label>Vehicle Make</label><select id="nl-make" onchange="populateLeadModels()"><option value="">Select make...</option></select></div>
+      <div class="field"><label>Vehicle Model</label><select id="nl-model"><option value="">Select model...</option></select></div>
+      <div class="field"><label>Estimated Price ($)</label><input id="nl-price" type="number" min="0" step="0.01" placeholder="0.00"></div>
+      <div class="field"><label>Preferred Date</label><input id="nl-date" type="date"></div>
+      <div class="modal-actions">
+        <button class="btn btn-cancel" onclick="leadBack()">← Back</button>
+        <button class="btn btn-primary" onclick="saveNewLead()">🎯 Save Lead</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONVERT LEAD MODAL -->
+<div class="overlay" id="modal-convert">
+  <div class="modal">
+    <div class="modal-title">Convert Lead</div>
+    <div class="modal-sub" id="convert-sub">Move this lead forward</div>
+    <div id="convert-options" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal('modal-convert')">Cancel</button>
     </div>
   </div>
 </div>
