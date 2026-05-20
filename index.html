@@ -633,14 +633,14 @@ function sbHeaders() {
 
 async function sbGet(table, params) {
   var url = SUPA_URL + '/rest/v1/' + table + '?order=id.asc' + (params || '');
-  var res = await fetch(url, { headers: sbHeaders() });
+  var res = await fetch(url, { headers: sbHeaders(), cache: 'no-store' });
   if (!res.ok) throw new Error('GET ' + table + ' failed: ' + res.status);
   return res.json();
 }
 
 async function sbInsert(table, data) {
   var res = await fetch(SUPA_URL + '/rest/v1/' + table, {
-    method: 'POST', headers: sbHeaders(), body: JSON.stringify(data)
+    method: 'POST', headers: sbHeaders(), body: JSON.stringify(data), cache: 'no-store'
   });
   if (!res.ok) throw new Error('INSERT ' + table + ' failed: ' + res.status);
   var rows = await res.json();
@@ -649,7 +649,7 @@ async function sbInsert(table, data) {
 
 async function sbUpdate(table, id, data) {
   var res = await fetch(SUPA_URL + '/rest/v1/' + table + '?id=eq.' + id, {
-    method: 'PATCH', headers: sbHeaders(), body: JSON.stringify(data)
+    method: 'PATCH', headers: sbHeaders(), body: JSON.stringify(data), cache: 'no-store'
   });
   if (!res.ok) throw new Error('UPDATE ' + table + ' failed: ' + res.status);
   var rows = await res.json();
@@ -658,7 +658,7 @@ async function sbUpdate(table, id, data) {
 
 async function sbDelete(table, id) {
   var res = await fetch(SUPA_URL + '/rest/v1/' + table + '?id=eq.' + id, {
-    method: 'DELETE', headers: sbHeaders()
+    method: 'DELETE', headers: sbHeaders(), cache: 'no-store'
   });
   if (!res.ok) throw new Error('DELETE ' + table + ' failed: ' + res.status);
 }
@@ -722,7 +722,6 @@ async function fullSync() {
       sbGet('comms')
     ]);
     
-    // Preserve any unsynced local-only records (IDs generated via Date.now())
     var localClients = clients.filter(x => x.id > 1000000000000);
     var localJobs = jobs.filter(x => x.id > 1000000000000);
 
@@ -742,7 +741,6 @@ async function fullSync() {
   }
 }
 
-// Map Supabase snake_case → app camelCase
 function mapClient(r) { return { id: r.id, name: r.name||'', vehicle: r.vehicle||'', phone: r.phone||'', email: r.email||'', notes: r.notes||'' }; }
 function mapJob(r)    { return { id: r.id, clientId: r.client_id, service: r.service||'', price: parseFloat(r.price)||0, status: r.status||'Lead', date: r.date||'', notes: r.notes||'', vehicleYear: r.vehicle_year||'', vehicleMake: r.vehicle_make||'', vehicleModel: r.vehicle_model||'', photos: [] }; }
 function mapExpense(r){ return { id: r.id, name: r.name||'', cat: r.cat||'Other', amount: parseFloat(r.amount)||0, date: r.date||'', notes: r.notes||'' }; }
@@ -1006,7 +1004,7 @@ async function logNote() {
 function confirmDeleteClient() {
   var c = getClientById(viewingClientId); if(!c) return;
   showConfirm('Delete "'+c.name+'"?', 'All jobs and communications will also be removed.', async function() {
-    try { await sbDelete('clients', viewingClientId); } catch(e){}
+    try { await sbDelete('clients', viewingClientId); } catch(e) {}
     jobs    = jobs.filter(j=>j.clientId!==viewingClientId);
     comms   = comms.filter(cm=>cm.clientId!==viewingClientId);
     clients = clients.filter(x=>x.id!==viewingClientId);
