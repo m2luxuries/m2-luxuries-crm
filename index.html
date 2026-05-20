@@ -338,14 +338,15 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <button class="quick-btn yellow" onclick="changeJobStatus()"><span class="qicon">🔄</span><span class="qlabel">Status</span></button>
   </div>
   <div class="card">
-    <div class="section-title">Job Info</div>
-    <div class="detail-section"><div class="detail-label">Client</div><div class="detail-value" id="jd-client">—</div></div>
-    <div class="detail-section"><div class="detail-label">Service</div><div class="detail-value" id="jd-service">—</div></div>
-    <div class="detail-section"><div class="detail-label">Vehicle</div><div class="detail-value" id="jd-vehicle">—</div></div>
-    <div class="detail-section"><div class="detail-label">Price</div><div class="detail-value" id="jd-price">—</div></div>
-    <div class="detail-section"><div class="detail-label">Status</div><div id="jd-status-wrap"></div></div>
-    <div class="detail-section"><div class="detail-label">Date</div><div class="detail-value" id="jd-date">—</div></div>
-    <div class="detail-section"><div class="detail-label">Notes</div><div class="detail-value" id="jd-notes">—</div></div>
+    <div class="job-info">
+      <div class="detail-section"><div class="detail-label">Client</div><div class="detail-value" id="jd-client">—</div></div>
+      <div class="detail-section"><div class="detail-label">Service</div><div class="detail-value" id="jd-service">—</div></div>
+      <div class="detail-section"><div class="detail-label">Vehicle</div><div class="detail-value" id="jd-vehicle">—</div></div>
+      <div class="detail-section"><div class="detail-label">Price</div><div class="detail-value" id="jd-price">—</div></div>
+      <div class="detail-section"><div class="detail-label">Status</div><div id="jd-status-wrap"></div></div>
+      <div class="detail-section"><div class="detail-label">Date</div><div class="detail-value" id="jd-date">—</div></div>
+      <div class="detail-section"><div class="detail-label">Notes</div><div class="detail-value" id="jd-notes">—</div></div>
+    </div>
   </div>
   <div class="card">
     <div class="section-title">Photos</div>
@@ -440,10 +441,10 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
   </div>
 
   <div class="stats-grid">
-    <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value" id="r-revenue">$0</div><div class="stat-sub" id="r-revenue-sub">0 jobs</div></div>
-    <div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-value" id="r-expenses" style="color:var(--red)">$0</div><div class="stat-sub" id="r-expenses-sub">0 items</div></div>
-    <div class="stat-card"><div class="stat-label">Net Profit</div><div class="stat-value" id="r-profit">$0</div><div class="stat-sub">Revenue − expenses</div></div>
-    <div class="stat-card"><div class="stat-label">Avg Job Value</div><div class="stat-value" id="r-avg">$0</div><div class="stat-sub">Per completed job</div></div>
+    <div class="stats-card, stat-card"><div class="stat-label">Revenue</div><div class="stat-value" id="r-revenue">$0</div><div class="stat-sub" id="r-revenue-sub">0 jobs</div></div>
+    <div class="stats-card, stat-card"><div class="stat-label">Expenses</div><div class="stat-value" id="r-expenses" style="color:var(--red)">$0</div><div class="stat-sub" id="r-expenses-sub">0 items</div></div>
+    <div class="stats-card, stat-card"><div class="stat-label">Net Profit</div><div class="stat-value" id="r-profit">$0</div><div class="stat-sub">Revenue − expenses</div></div>
+    <div class="stats-card, stat-card"><div class="stat-label">Avg Job Value</div><div class="stat-value" id="r-avg">$0</div><div class="stat-sub">Per completed job</div></div>
   </div>
 
   <div class="card">
@@ -523,10 +524,9 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="field"><label>Service *</label>
       <select id="mj-service">
         <option value="">Select a service...</option>
-        <option value="Interior Detail">Interior Detail</option>
         <option value="Refresh">Refresh</option>
         <option value="Signature">Signature</option>
-        <option value="Elite Detail">Elite Detail</option>
+        <option value="Elite">Elite</option>
         <option value="PPF">PPF</option>
         <option value="Wrap">Wrap</option>
         <option value="Ceramic">Ceramic</option>
@@ -711,17 +711,15 @@ function setSyncStatus(state, msg) {
 }
 
 // ══════════════════════════════════════════════════════
-// UPSTREAM FLUSH SYNC SYSTEM (REPAIRED UPSTREAM FORWARDING)
+// UPSTREAM FLUSH SYNC SYSTEM
 // ══════════════════════════════════════════════════════
 async function fullSync() {
   setSyncStatus('syncing', 'Syncing with cloud...');
   try {
-    // 1. Isolate hidden local entries that have not uploaded yet
     var localClients = clients.filter(x => x.id > 1000000000000);
     var localJobs = jobs.filter(x => x.id > 1000000000000);
     var clientIdMap = {};
 
-    // Upstream local clients first to verify foreign keys
     for (var lc of localClients) {
       var { id, ...rest } = lc;
       try {
@@ -731,7 +729,6 @@ async function fullSync() {
       } catch (err) { console.error('Failed upstreaming local client:', err); }
     }
 
-    // Upstream local jobs mapped to correct columns
     for (var lj of localJobs) {
       var { id, clientId, photos, ...rest } = lj;
       var targetClientId = clientIdMap[clientId] || clientId;
@@ -753,7 +750,6 @@ async function fullSync() {
       } catch (err) { console.error('Failed upstreaming local job:', err); }
     }
 
-    // 2. Fetch uniform structural records from source
     var [c, j, e, cm] = await Promise.all([
       sbGet('clients'),
       sbGet('jobs'),
@@ -777,9 +773,6 @@ async function fullSync() {
   }
 }
 
-// ══════════════════════════════════════════════════════
-// STRUCTURAL RE-MAPPING LAYER
-// ══════════════════════════════════════════════════════
 function mapClient(r) { return { id: r.id, name: r.name||'', vehicle: r.vehicle||'', phone: r.phone||'', email: r.email||'', notes: r.notes||'' }; }
 function mapJob(r)    { return { id: r.id, clientId: r.client_id, service: r.service||'', price: parseFloat(r.price)||0, status: r.status||'Lead', date: r.date||'', notes: r.notes||'', vehicleYear: r.vehicle_year||'', vehicleMake: r.vehicle_make||'', vehicleModel: r.vehicle_model||'', photos: [] }; }
 function mapExpense(r){ return { id: r.id, name: r.name||'', cat: r.cat||'Other', amount: parseFloat(r.amount)||0, date: r.date||'', notes: r.notes||'' }; }
@@ -1204,7 +1197,18 @@ async function saveJob() {
   var vehicleMake=document.getElementById('mj-make').value;
   var vehicleModel=document.getElementById('mj-model').value;
   var id=document.getElementById('mj-id').value;
-  var sbData={client_id:clientId,service,price,status,date,notes,vehicle_year:vehicleYear,vehicle_make:vehicleMake,vehicle_model:vehicleModel};
+  
+  var sbData={
+    client_id:clientId,
+    service,
+    price,
+    status,
+    date,
+    notes,
+    vehicle_year: vehicleYear ? parseInt(vehicleYear) : null,
+    vehicle_make: vehicleMake || null,
+    vehicle_model: vehicleModel || null
+  };
   closeModal('modal-job');
   try {
     if(id) {
@@ -1218,6 +1222,7 @@ async function saveJob() {
       showToast('✓ Job added');
     }
   } catch(err) {
+    console.error('Database Error Details:', err);
     if(id) { var j=jobs.find(x=>x.id==id); if(j){j.clientId=clientId;j.service=service;j.price=price;j.status=status;j.date=date;j.notes=notes;} }
     else { jobs.push({id:Date.now(),clientId,service,price,status,date,notes,vehicleYear,vehicleMake,vehicleModel,photos:[]}); }
     showToast('✓ Saved locally');
@@ -1226,7 +1231,6 @@ async function saveJob() {
   if(currentPage==='jobs') renderJobs();
   if(currentPage==='pipeline') renderPipeline();
 }
-// Cleaned broken reference compilation bug
 function renderJobs(filter) {
   filter=filter||''; var f=filter.toLowerCase();
   var list=jobs.filter(j=>{var c=getClientById(j.clientId);var cn=c?c.name:'';return cn.toLowerCase().includes(f)||j.service.toLowerCase().includes(f)||j.status.toLowerCase().includes(f);});
@@ -1278,7 +1282,7 @@ async function setJobStatus(s){
       renderSmsTemplates(c);
       var ct=MESSAGE_TEMPLATES.find(t=>t.id==='complete');
       if(ct) document.getElementById('sms-custom').value=fillTemplate(ct.body,c);
-      setTimeout(()=>openModal('modal-sms'),400);
+      setTimeout(()=>openModal('sms'),400);
     }
   }
 }
@@ -1292,7 +1296,7 @@ function confirmDeleteJob(){
 }
 
 // ══════════════════════════════════════════════════════
-// INTERNAL METADATA TRACKING (MEDIA FALLBACK)
+// PHOTOS  (local only — too large for cloud)
 // ══════════════════════════════════════════════════════
 function triggerPhotoUpload(){
   var inp=document.getElementById('photo-file-input');
@@ -1322,7 +1326,7 @@ function deletePhoto(idx){
 }
 
 // ══════════════════════════════════════════════════════
-// PIPELINE DISPLAY GENERATOR
+// PIPELINE
 // ══════════════════════════════════════════════════════
 var pipelineFilter = null;
 
@@ -1375,7 +1379,7 @@ function renderPipeline(){
 }
 
 // ══════════════════════════════════════════════════════
-// SMS ENGAGEMENT LOGS
+// MESSAGES
 // ══════════════════════════════════════════════════════
 function renderMessages(){
   var recent=comms.slice().reverse().slice(0,30);
@@ -1407,7 +1411,7 @@ function promptClientForTemplate(tid){
 }
 
 // ══════════════════════════════════════════════════════
-// OPERATIONAL COST LEDGER
+// EXPENSES
 // ══════════════════════════════════════════════════════
 async function saveExpense(){
   var name=document.getElementById('me-name').value.trim();
@@ -1440,7 +1444,7 @@ function renderMore(){
 }
 
 // ══════════════════════════════════════════════════════
-// ANALYTICAL PERFORMANCE DASHBOARD (COMPILED COMPONENT)
+// DASHBOARD
 // ══════════════════════════════════════════════════════
 function renderDashboard(){
   var rev=jobs.filter(j=>j.status==='Complete').reduce((s,j)=>s+j.price,0);
@@ -1465,7 +1469,7 @@ function renderDashboard(){
 }
 
 // ══════════════════════════════════════════════════════
-// DATA RECOVERY BACKUP CONTROLLERS
+// EXPORT / IMPORT
 // ══════════════════════════════════════════════════════
 function exportData(){
   var data={clients,jobs:jobs.map(j=>({...j,photos:[]})),expenses,comms,exported:new Date().toISOString()};
@@ -1508,14 +1512,14 @@ async function importData(event){
 }
 
 // ══════════════════════════════════════════════════════
-// CONTROL CLICK HANDLERS
+// HEADER BUTTONS
 // ══════════════════════════════════════════════════════
 document.getElementById('btn-add-client').onclick=()=>openAddClient();
 document.getElementById('btn-add-job').onclick=()=>openAddJob();
 document.getElementById('btn-add-expense').onclick=()=>{document.getElementById('me-date').value=today();openModal('modal-expense');};
 
 // ══════════════════════════════════════════════════════
-// APPLICATION RUNTIME BOOT
+// BOOT
 // ══════════════════════════════════════════════════════
 async function boot(){
   document.getElementById('loading-msg').textContent='Loading local data...';
@@ -1530,7 +1534,7 @@ async function boot(){
 
 
 // ══════════════════════════════════════════════════════
-// PARSING SUBSYSTEM (CSV INTEGRATION)
+// CSV CONTACT IMPORT
 // ══════════════════════════════════════════════════════
 var csvParsedContacts = [];
 
@@ -1656,7 +1660,7 @@ async function confirmCSVImport() {
 
 
 // ══════════════════════════════════════════════════════
-// DATA COLLECTION SCHEMA
+// VEHICLE DATA & DROPDOWNS
 // ══════════════════════════════════════════════════════
 var VEHICLE_DATA = {
   'Acura':['ILX','MDX','NSX','RDX','RLX','TL','TLX','TSX'],
@@ -1733,7 +1737,7 @@ function populateModels(preselect) {
 
 
 // ══════════════════════════════════════════════════════
-// DATE COLLECTION AND GENERATOR
+// REPORTS
 // ══════════════════════════════════════════════════════
 var currentRange = 'month';
 
@@ -1841,12 +1845,15 @@ function renderReports() {
   var topClients = Object.entries(clientMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
   var tcEl = document.getElementById('r-top-clients');
   tcEl.innerHTML = topClients.length
-    ? topClients.map(([cid,amt])=>`
-        <div class="list-row" onclick="viewClient(${cid})" style="cursor:pointer">
-          <div class="avatar">${initials(getClientById(parseInt(cid))?getClientById(parseInt(cid)).name:'?')}</div>
-          <div class="row-info"><div class="row-name">${getClientById(parseInt(cid))?getClientById(parseInt(cid)).name:'Unknown'}</div><div class="row-sub">${completedJobs.filter(j=>j.clientId===parseInt(cid)).length} jobs</div></div>
+    ? topClients.map(([cid,amt])=>{
+        var c = getClientById(parseInt(cid));
+        var count = completedJobs.filter(j=>j.clientId===parseInt(cid)).length;
+        return `<div class="list-row" onclick="viewClient(${cid})" style="cursor:pointer">
+          <div class="avatar">${initials(c?c.name:'?')}</div>
+          <div class="row-info"><div class="row-name">${c?c.name:'Unknown'}</div><div class="row-sub">${count} job${count!==1?'s':''}</div></div>
           <div class="row-right"><div class="row-value">${fmt(amt)}</div></div>
-        </div>`).join('')
+        </div>`;
+      }).join('')
     : '<div class="empty-state"><div class="empty-text">No completed jobs in this period</div></div>';
 
   var cjEl = document.getElementById('r-completed-jobs');
@@ -1868,7 +1875,7 @@ function renderReports() {
 
 
 // ══════════════════════════════════════════════════════
-// LEAD CAPTURE VALIDATION LAYER
+// NEW LEAD CAPTURE
 // ══════════════════════════════════════════════════════
 function openNewLeadModal() {
   ['nl-name','nl-phone','nl-email','nl-notes','nl-price'].forEach(id=>{
@@ -1973,7 +1980,7 @@ async function saveNewLead() {
 }
 
 // ══════════════════════════════════════════════════════
-// DATA TRANSITION ENGINE
+// CONVERT LEAD
 // ══════════════════════════════════════════════════════
 function showConvertButton(job) {
   var wrap = document.getElementById('jd-convert-wrap');
