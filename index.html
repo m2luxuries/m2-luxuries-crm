@@ -719,27 +719,64 @@ function setSyncStatus(state, msg) {
 async function fullSync() {
   setSyncStatus('syncing','Syncing with cloud...');
   try {
+    // Push any local-only records (temp IDs) up to cloud
     var localClients=clients.filter(x=>x.id>1000000000000);
-    var localJobs=jobs.filter(x=>x.id>1000000000000);
     var clientIdMap={};
     for(var lc of localClients){
       var {id,...rest}=lc;
-      try{var row=await sbInsert('clients',rest);var cc=mapClient(row);clientIdMap[id]=cc.id;}catch(err){}
+      try{
+        var row=await sbInsert('clients',rest);
+        clientIdMap[id]=row.id;
+        var li=clients.findIndex(c=>c.id===id);
+        if(li>-1) clients[li]=mapClient(row);
+        jobs.forEach(j=>{ if(j.clientId===id) j.clientId=row.id; });
+      }catch(err){ console.warn('Could not push local client to cloud:',err); }
     }
+    var localJobs=jobs.filter(x=>x.id>1000000000000);
     for(var lj of localJobs){
       var {id,clientId,photos,...rest}=lj;
-      var targetClientId=clientIdMap[clientId]||clientId;
-      try{await sbInsert('jobs',{client_id:targetClientId,service:rest.service,price:rest.price,status:rest.status,date:rest.date,appointment_time:rest.appointmentTime,notes:rest.notes,vehicle_year:rest.vehicleYear?parseInt(rest.vehicleYear):null,vehicle_make:rest.vehicleMake||null,vehicle_model:rest.vehicleModel||null});}catch(err){}
+      var targetCid=clientIdMap[clientId]||clientId;
+      try{
+        var row=await sbInsert('jobs',{client_id:targetCid,service:rest.service,price:rest.price,status:rest.status,date:rest.date,appointment_time:rest.appointmentTime,notes:rest.notes,vehicle_year:rest.vehicleYear?parseInt(rest.vehicleYear):null,vehicle_make:rest.vehicleMake||null,vehicle_model:rest.vehicleModel||null});
+        var ji=jobs.findIndex(j=>j.id===id);
+        if(ji>-1) jobs[ji]=Object.assign(mapJob(row),{photos:[]});
+      }catch(err){ console.warn('Could not push local job to cloud:',err); }
     }
+
+    // Pull cloud data and MERGE (don't wipe local)
     var [c,j,e,cm]=await Promise.all([sbGet('clients'),sbGet('jobs'),sbGet('expenses'),sbGet('comms')]);
-    clients=c.map(mapClient);jobs=j.map(mapJob);expenses=e.map(mapExpense);comms=cm.map(mapComm);
+
+    // Merge clients: keep local records not in cloud
+    var cloudClients=c.map(mapClient);
+    var cloudClientIds=new Set(cloudClients.map(x=>x.id));
+    var localOnlyClients=clients.filter(x=>!cloudClientIds.has(x.id));
+    clients=[...cloudClients,...localOnlyClients];
+
+    // Merge jobs
+    var cloudJobs=j.map(mapJob);
+    var cloudJobIds=new Set(cloudJobs.map(x=>x.id));
+    var localOnlyJobs=jobs.filter(x=>!cloudJobIds.has(x.id));
+    jobs=[...cloudJobs,...localOnlyJobs];
+
+    // Merge expenses
+    var cloudExp=e.map(mapExpense);
+    var cloudExpIds=new Set(cloudExp.map(x=>x.id));
+    var localOnlyExp=expenses.filter(x=>!cloudExpIds.has(x.id));
+    expenses=[...cloudExp,...localOnlyExp];
+
+    // Merge comms
+    var cloudComms=cm.map(mapComm);
+    var cloudCommIds=new Set(cloudComms.map(x=>x.id));
+    var localOnlyComms=comms.filter(x=>!cloudCommIds.has(x.id));
+    comms=[...cloudComms,...localOnlyComms];
+
     saveCache();
     setSyncStatus('online','Last synced: '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));
-    refreshCurrentPage();renderDashboard();
+    refreshCurrentPage(); renderDashboard();
   } catch(err) {
     console.error('Sync error:',err);
-    setSyncStatus('offline','Sync failed — check connection');
-    showToast('⚠️ Cloud sync failed — using local data');
+    setSyncStatus('offline','Sync failed — your local data is safe');
+    showToast('⚠️ Cloud sync failed — local data preserved');
   }
 }
 
@@ -818,34 +855,39 @@ function editClient(){
 async function saveClient(){
   var name=document.getElementById('mc-name').value.trim();
   if(!name){showToast('⚠️ Name is required');return;}
-  var id=document.getElementById('mc-id').value;
+  var existingId=document.getElementById('mc-id').value;
   var data={name,vehicle:document.getElementById('mc-vehicle').value.trim(),phone:document.getElementById('mc-phone').value.trim(),email:document.getElementById('mc-email').value.trim(),notes:document.getElementById('mc-notes').value.trim()};
   closeModal('modal-client');
-  var cloudOk = false;
-  try{
-    if(id){
-      var row=await sbUpdate('clients',id,data);
-      var idx=clients.findIndex(c=>c.id==id);if(idx>-1)clients[idx]=mapClient(row);
-      showToast('✓ Client updated');
-      if(currentPage==='client-detail')renderClientDetail(parseInt(id));
-      cloudOk=true;
-    }else{
+
+  if(existingId){
+    // EDIT: update locally first
+    var idx=clients.findIndex(c=>c.id==existingId);
+    if(idx>-1) clients[idx]=Object.assign(clients[idx],data);
+    saveCache(); renderClients(); renderDashboard();
+    showToast('✓ Client updated');
+    if(currentPage==='client-detail') renderClientDetail(parseInt(existingId));
+    // Then sync to cloud
+    try{ await sbUpdate('clients',existingId,data); } catch(e){ console.warn('Cloud update failed (local is safe):',e); }
+  } else {
+    // NEW: save locally with temp ID first so it survives any refresh
+    var tempId = Date.now();
+    var localClient = Object.assign({id:tempId},data);
+    clients.push(localClient);
+    saveCache(); renderClients(); renderDashboard();
+    showToast('✓ Client added');
+    showPage('clients');
+    // Then sync to cloud and replace temp ID with real one
+    try{
       var row=await sbInsert('clients',data);
-      if(!row||!row.id){throw new Error('Supabase returned empty row — check table permissions (RLS)');}
-      clients.push(mapClient(row));
-      showToast('✓ Client added');
-      cloudOk=true;
-    }
-  }catch(err){
-    console.error('saveClient cloud error:', err);
-    showToast('⚠️ Cloud save failed — saved locally. Check console.');
-    if(id){var c=clients.find(x=>x.id==id);if(c)Object.assign(c,data);}
-    else{data.id=Date.now();clients.push(data);}
+      if(row && row.id){
+        var li=clients.findIndex(c=>c.id===tempId);
+        if(li>-1) clients[li]=mapClient(row);
+        // also fix any jobs pointing to tempId
+        jobs.forEach(j=>{ if(j.clientId===tempId) j.clientId=row.id; });
+        saveCache();
+      }
+    } catch(e){ console.warn('Cloud save failed (local is safe):',e); }
   }
-  saveCache();
-  renderDashboard();
-  renderClients(); // always re-render regardless of current page
-  if(cloudOk) showPage('clients'); // navigate so user can see the new contact
 }
 
 // ══════════════════════════════════════════════════════
@@ -1520,9 +1562,6 @@ function populateLeadModels(){var make=document.getElementById('nl-make').value;
 function leadStep2(){var name=document.getElementById('nl-name').value.trim();if(!name){showToast('⚠️ Name is required');return;}document.getElementById('lead-step-1').style.display='none';document.getElementById('lead-step-2').style.display='block';document.getElementById('lstep-1').className='lead-step done';document.getElementById('lstep-2').className='lead-step active';}
 function leadBack(){document.getElementById('lead-step-2').style.display='none';document.getElementById('lead-step-1').style.display='block';document.getElementById('lstep-1').className='lead-step active';document.getElementById('lstep-2').className='lead-step';}
 
-// ══════════════════════════════════════════════════════
-// FIX 10: saveNewLead — clientId mismatch bug fixed
-// ══════════════════════════════════════════════════════
 async function saveNewLead(){
   var name=document.getElementById('nl-name').value.trim();
   var service=document.getElementById('nl-service').value;
@@ -1539,52 +1578,41 @@ async function saveNewLead(){
   var appointmentTime=document.getElementById('nl-time').value;
   var veh=[year,make,model].filter(Boolean).join(' ');
   closeModal('modal-new-lead');
-  setSyncStatus('syncing','Saving lead...');
 
-  var newClient = null;
-  var newJob = null;
+  // Save locally FIRST with temp IDs so refresh never loses data
+  var tempClientId=Date.now();
+  var tempJobId=tempClientId+1;
+  var localClient={id:tempClientId,name,phone,email,vehicle:veh,notes};
+  var localJob={id:tempJobId,clientId:tempClientId,service,price,status:'Lead',date,appointmentTime,notes:'',vehicleYear:year,vehicleMake:make,vehicleModel:model,photos:[]};
+  clients.push(localClient);
+  jobs.push(localJob);
+  saveCache();
+  showToast('🎯 Lead captured — '+name);
+  renderDashboard(); renderPipeline();
+  setTimeout(()=>viewJob(localJob.id), 300);
 
+  // Then try to push to cloud in background
+  setSyncStatus('syncing','Saving to cloud...');
   try {
-    // Insert client first, capture real cloud ID
-    var clientRow = await sbInsert('clients',{name,phone,email,vehicle:veh,notes});
-    newClient = mapClient(clientRow);
-    clients.push(newClient);
+    var clientRow=await sbInsert('clients',{name,phone,email,vehicle:veh,notes});
+    var realClient=mapClient(clientRow);
+    // Replace temp client
+    var ci=clients.findIndex(c=>c.id===tempClientId);
+    if(ci>-1) clients[ci]=realClient;
 
-    // Insert job using real cloud client ID
-    var jobRow = await sbInsert('jobs',{
-      client_id:newClient.id, service, price, status:'Lead',
-      date, appointment_time:appointmentTime, notes:'',
-      vehicle_year:year?parseInt(year):null,
-      vehicle_make:make||null, vehicle_model:model||null
-    });
-    newJob = mapJob(jobRow);
-    jobs.push(newJob);
+    var jobRow=await sbInsert('jobs',{client_id:realClient.id,service,price,status:'Lead',date,appointment_time:appointmentTime,notes:'',vehicle_year:year?parseInt(year):null,vehicle_make:make||null,vehicle_model:model||null});
+    var realJob=mapJob(jobRow);
+    // Replace temp job
+    var ji=jobs.findIndex(j=>j.id===tempJobId);
+    if(ji>-1) jobs[ji]=realJob;
 
     saveCache();
-    setSyncStatus('online','Lead saved!');
-    showToast('🎯 Lead captured — '+name);
-    renderDashboard(); renderPipeline();
-    setTimeout(()=>viewJob(newJob.id), 400);
-
-  } catch(err) {
-    console.error('saveNewLead cloud error:', err);
-    // FIX: if client was already inserted, use its real ID for the job
-    // If client insert failed too, use a local temp ID
-    if (!newClient) {
-      var tempId = Date.now();
-      newClient = {id:tempId, name, phone, email, vehicle:veh, notes};
-      clients.push(newClient);
-    }
-    // Always use newClient.id — not a new Date.now() — so job links to the right client
-    var tempJobId = Date.now() + 1;
-    newJob = {id:tempJobId, clientId:newClient.id, service, price, status:'Lead',
-      date, appointmentTime, notes:'', vehicleYear:year, vehicleMake:make, vehicleModel:model, photos:[]};
-    jobs.push(newJob);
-    saveCache();
-    setSyncStatus('offline','Saved locally — cloud save failed. Open console for details.');
-    showToast('⚠️ Cloud save failed — saved locally');
-    renderDashboard(); renderPipeline();
-    setTimeout(()=>viewJob(newJob.id), 400);
+    setSyncStatus('online','Lead saved to cloud!');
+    // If currently viewing the temp job, re-render with real job
+    if(viewingJobId===tempJobId){ viewingJobId=realJob.id; renderJobDetail(realJob.id); }
+  } catch(err){
+    console.warn('Cloud save failed (local is safe):',err);
+    setSyncStatus('offline','Local only — tap Sync when online');
   }
 }
 
@@ -1618,47 +1646,12 @@ async function convertLeadTo(status){
 // BOOT
 // ══════════════════════════════════════════════════════
 async function boot(){
-  document.getElementById('loading-msg').textContent='Loading local data...';
-  loadCache();
+  document.getElementById('loading-msg').textContent='Loading saved data...';
+  loadCache(); // localStorage is source of truth — always loads first
   renderDashboard();
   document.getElementById('mj-date').value=today();
   document.getElementById('me-date').value=today();
-  document.getElementById('loading-msg').textContent='Testing Supabase connection...';
-
-  // ── DIAGNOSTIC: test read + write before anything else ──
-  try {
-    // Test read
-    var testRead = await fetch(SUPA_URL + '/rest/v1/clients?limit=1', {headers: sbHeaders(), cache:'no-store'});
-    if (!testRead.ok) {
-      var readErr = await testRead.text();
-      throw new Error('READ FAILED ('+testRead.status+'): ' + readErr);
-    }
-
-    // Test write — insert a dummy row then delete it
-    var testInsert = await fetch(SUPA_URL + '/rest/v1/clients', {
-      method:'POST', headers: sbHeaders(),
-      body: JSON.stringify({name:'__test__', phone:'', email:'', vehicle:'', notes:''}),
-      cache:'no-store'
-    });
-    if (!testInsert.ok) {
-      var writeErr = await testInsert.text();
-      throw new Error('WRITE BLOCKED ('+testInsert.status+'): ' + writeErr + '\n\nThis is usually a Supabase RLS (Row Level Security) policy blocking inserts. Go to your Supabase dashboard → Table Editor → clients → RLS Policies and either disable RLS or add an insert policy for the anon role.');
-    }
-    var testRow = await testInsert.json();
-    var testId = Array.isArray(testRow) ? testRow[0].id : testRow.id;
-    // Clean up test row
-    await fetch(SUPA_URL + '/rest/v1/clients?id=eq.'+testId, {method:'DELETE', headers:sbHeaders(), cache:'no-store'});
-    console.log('✅ Supabase read + write: OK');
-
-  } catch(diagErr) {
-    document.getElementById('loading-screen').style.display='none';
-    alert('⚠️ SUPABASE PROBLEM DETECTED\n\n' + diagErr.message + '\n\nYour contacts cannot be saved until this is fixed. They will disappear on every refresh.');
-    setSyncStatus('offline', 'Supabase error — see alert');
-    return;
-  }
-  // ── END DIAGNOSTIC ──
-
-  document.getElementById('loading-msg').textContent='Connecting to cloud...';
+  document.getElementById('loading-msg').textContent='Syncing with cloud...';
   await fullSync();
   document.getElementById('loading-screen').style.display='none';
 }
