@@ -1651,64 +1651,42 @@ async function convertLeadTo(status){
 // BOOT
 // ══════════════════════════════════════════════════════
 async function runSupabaseDebug() {
-  out.style.display = 'block';
-  out.textContent = 'Running tests...\n';
+  var log = 'SUPABASE DIAGNOSTIC\n' + new Date().toLocaleTimeString() + '\n\n';
+  showToast('Running tests...');
 
-  async function test(label, fn) {
-    try {
-      var result = await fn();
-      out.textContent += '✅ ' + label + '\n   ' + JSON.stringify(result).slice(0,200) + '\n\n';
-    } catch(e) {
-      out.textContent += '❌ ' + label + '\n   ERROR: ' + e.message + '\n\n';
-    }
-  }
+  try {
+    var r1 = await fetch(SUPA_URL+'/rest/v1/clients?limit=3', {headers:sbHeaders()});
+    var b1 = await r1.text();
+    log += (r1.ok?'OK':'FAIL') + ' READ clients ('+r1.status+')\n' + b1.slice(0,200) + '\n\n';
+  } catch(e) { log += 'FAIL READ: '+e.message+'\n\n'; }
 
-  // Test 1: Can we read clients?
-  await test('Read clients table', async () => {
-    var r = await fetch(SUPA_URL+'/rest/v1/clients?limit=3', {headers:sbHeaders()});
-    if(!r.ok) throw new Error(r.status+' '+await r.text());
-    return await r.json();
-  });
-
-  // Test 2: Can we insert a client and get the name back?
   var insertedId = null;
-  await test('Insert client (name should come back)', async () => {
-    var r = await fetch(SUPA_URL+'/rest/v1/clients', {
+  try {
+    var r2 = await fetch(SUPA_URL+'/rest/v1/clients', {
       method:'POST', headers:sbHeaders(),
-      body: JSON.stringify({name:'TEST_CLIENT_DELETE_ME', phone:'5550000', email:'', vehicle:'', notes:''})
+      body: JSON.stringify({name:'TEST_DELETE_ME', phone:'', email:'', vehicle:'', notes:''})
     });
-    if(!r.ok) throw new Error(r.status+' '+await r.text());
-    var rows = await r.json();
-    var row = Array.isArray(rows) ? rows[0] : rows;
-    insertedId = row.id;
-    if(!row.name) throw new Error('Row came back but name is missing! Row: '+JSON.stringify(row));
-    return row;
-  });
+    var b2 = await r2.text();
+    log += (r2.ok?'OK':'FAIL') + ' INSERT client ('+r2.status+')\n' + b2.slice(0,300) + '\n\n';
+    if(r2.ok) {
+      var rows = JSON.parse(b2);
+      var row = Array.isArray(rows) ? rows[0] : rows;
+      if(row) { insertedId = row.id; log += 'name returned: "'+row.name+'"\nid returned: '+row.id+'\n\n'; }
+      else { log += 'WARNING: empty response body\n\n'; }
+    }
+  } catch(e) { log += 'FAIL INSERT: '+e.message+'\n\n'; }
 
-  // Test 3: Can we delete the test row?
   if(insertedId) {
-    await test('Delete test client', async () => {
-      var r = await fetch(SUPA_URL+'/rest/v1/clients?id=eq.'+insertedId, {method:'DELETE', headers:sbHeaders()});
-      if(!r.ok) throw new Error(r.status+' '+await r.text());
-      return 'deleted id '+insertedId;
-    });
+    try {
+      var r3 = await fetch(SUPA_URL+'/rest/v1/clients?id=eq.'+insertedId, {method:'DELETE', headers:sbHeaders()});
+      log += (r3.ok?'OK':'FAIL') + ' DELETE test row ('+r3.status+')\n\n';
+    } catch(e) { log += 'FAIL DELETE: '+e.message+'\n\n'; }
   }
 
-  // Test 4: Read jobs table
-  await test('Read jobs table', async () => {
-    var r = await fetch(SUPA_URL+'/rest/v1/jobs?limit=3', {headers:sbHeaders()});
-    if(!r.ok) throw new Error(r.status+' '+await r.text());
-    return await r.json();
-  });
+  log += 'Local memory: '+clients.length+' clients, '+jobs.length+' jobs\n';
+  log += 'localStorage: '+(localStorage.getItem('m2crm_cache')||'empty').slice(0,100);
 
-  // Test 5: Check local vs cloud count
-  await test('Local vs Cloud count', async () => {
-    var rc = await fetch(SUPA_URL+'/rest/v1/clients?select=id', {headers:sbHeaders()});
-    var cloudC = await rc.json();
-    return {localClients: clients.length, cloudClients: cloudC.length, localJobs: jobs.length};
-  });
-
-  out.textContent += '--- Done. Share this with support. ---';
+  alert(log);
 }
 
 async function boot(){
