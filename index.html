@@ -369,7 +369,12 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     </div>
   </div>
   <div class="card">
-    <div class="section-title">Supabase Debug</div>
+    <div class="section-title">Danger Zone</div>
+    <div class="list-row" style="cursor:pointer;border-bottom:none;" onclick="clearAllLocalData()">
+      <div class="row-info"><div class="row-name" style="color:var(--red);">🗑 Clear All Local Data</div><div class="row-sub">Wipes this device's cache — does not affect cloud</div></div>
+      <span style="color:var(--muted)">›</span>
+    </div>
+  </div>
     <div style="display:flex;flex-direction:column;gap:8px;">
       <button class="hbtn" style="padding:12px;font-size:13px;" onclick="runSupabaseDebug()">🔍 Test Supabase Tables</button>
       <div id="debug-output" style="font-size:11px;font-family:monospace;color:var(--text2);white-space:pre-wrap;background:var(--surface2);border-radius:8px;padding:10px;display:none;"></div>
@@ -1673,6 +1678,19 @@ async function convertLeadTo(status){
 // ══════════════════════════════════════════════════════
 // BOOT
 // ══════════════════════════════════════════════════════
+function clearAllLocalData() {
+  showConfirm('Clear all local data?', 'This wipes your device cache. Cloud data is unaffected — tap Sync after to reload from cloud.', function() {
+    localStorage.removeItem('m2crm_cache');
+    clients = []; jobs = []; expenses = []; comms = [];
+    saveCache();
+    showToast('✓ Local data cleared');
+    renderDashboard();
+    renderClients();
+    fullSync();
+  });
+}
+
+
 async function runSupabaseDebug() {
   var log = 'SUPABASE DIAGNOSTIC\n' + new Date().toLocaleTimeString() + '\n\n';
   showToast('Running tests...');
