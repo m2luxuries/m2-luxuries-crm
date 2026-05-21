@@ -369,7 +369,12 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     </div>
   </div>
   <div class="card">
-    <div class="section-title">Data &amp; Import</div>
+    <div class="section-title">Supabase Debug</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="hbtn" style="padding:12px;font-size:13px;" onclick="runSupabaseDebug()">🔍 Test Supabase Tables</button>
+      <div id="debug-output" style="font-size:11px;font-family:monospace;color:var(--text2);white-space:pre-wrap;background:var(--surface2);border-radius:8px;padding:10px;display:none;"></div>
+    </div>
+  </div>
     <div class="list-row" style="cursor:pointer;" onclick="exportData()">
       <div class="row-info"><div class="row-name">💾 Export Backup</div><div class="row-sub">Download all data as JSON</div></div>
       <span style="color:var(--muted)">›</span>
@@ -1645,9 +1650,70 @@ async function convertLeadTo(status){
 // ══════════════════════════════════════════════════════
 // BOOT
 // ══════════════════════════════════════════════════════
+async function runSupabaseDebug() {
+  out.style.display = 'block';
+  out.textContent = 'Running tests...\n';
+
+  async function test(label, fn) {
+    try {
+      var result = await fn();
+      out.textContent += '✅ ' + label + '\n   ' + JSON.stringify(result).slice(0,200) + '\n\n';
+    } catch(e) {
+      out.textContent += '❌ ' + label + '\n   ERROR: ' + e.message + '\n\n';
+    }
+  }
+
+  // Test 1: Can we read clients?
+  await test('Read clients table', async () => {
+    var r = await fetch(SUPA_URL+'/rest/v1/clients?limit=3', {headers:sbHeaders()});
+    if(!r.ok) throw new Error(r.status+' '+await r.text());
+    return await r.json();
+  });
+
+  // Test 2: Can we insert a client and get the name back?
+  var insertedId = null;
+  await test('Insert client (name should come back)', async () => {
+    var r = await fetch(SUPA_URL+'/rest/v1/clients', {
+      method:'POST', headers:sbHeaders(),
+      body: JSON.stringify({name:'TEST_CLIENT_DELETE_ME', phone:'5550000', email:'', vehicle:'', notes:''})
+    });
+    if(!r.ok) throw new Error(r.status+' '+await r.text());
+    var rows = await r.json();
+    var row = Array.isArray(rows) ? rows[0] : rows;
+    insertedId = row.id;
+    if(!row.name) throw new Error('Row came back but name is missing! Row: '+JSON.stringify(row));
+    return row;
+  });
+
+  // Test 3: Can we delete the test row?
+  if(insertedId) {
+    await test('Delete test client', async () => {
+      var r = await fetch(SUPA_URL+'/rest/v1/clients?id=eq.'+insertedId, {method:'DELETE', headers:sbHeaders()});
+      if(!r.ok) throw new Error(r.status+' '+await r.text());
+      return 'deleted id '+insertedId;
+    });
+  }
+
+  // Test 4: Read jobs table
+  await test('Read jobs table', async () => {
+    var r = await fetch(SUPA_URL+'/rest/v1/jobs?limit=3', {headers:sbHeaders()});
+    if(!r.ok) throw new Error(r.status+' '+await r.text());
+    return await r.json();
+  });
+
+  // Test 5: Check local vs cloud count
+  await test('Local vs Cloud count', async () => {
+    var rc = await fetch(SUPA_URL+'/rest/v1/clients?select=id', {headers:sbHeaders()});
+    var cloudC = await rc.json();
+    return {localClients: clients.length, cloudClients: cloudC.length, localJobs: jobs.length};
+  });
+
+  out.textContent += '--- Done. Share this with support. ---';
+}
+
 async function boot(){
   document.getElementById('loading-msg').textContent='Loading saved data...';
-  loadCache(); // localStorage is source of truth — always loads first
+  loadCache();
   renderDashboard();
   document.getElementById('mj-date').value=today();
   document.getElementById('me-date').value=today();
