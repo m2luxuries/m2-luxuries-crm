@@ -469,9 +469,8 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="field"><label>Service *</label>
       <select id="mj-service">
         <option value="">Select service...</option>
-        <option>Refresh Detail</option><option>Signature Detail</option><option>Elite Detail</option>
-        <option>Interior Detail</option><option>Exterior Detail</option>
-        <option>PPF</option><option>Wrap</option><option>Ceramic</option><option>PDR</option>
+        <option>Refresh</option><option>Signature</option><option>Elite</option>
+        <option>PPF</option><option>Wrap</option><option>Ceramic</option>
         <option>Paint Correction</option><option>Spot Paint Repair</option><option>Other</option>
       </select>
     </div>
@@ -557,9 +556,9 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
       <div class="field"><label>Service *</label>
         <select id="nl-service">
           <option value="">Select service...</option>
-          <option>Refresh Detail</option><option>Signature Detail</option><option>Elite Detail</option><option>Interior Detail</option>
-          <option>Exterior Detail</option><option>PPF</option><option>Wrap</option><option>Ceramic</option>
-          <option>Paint Correction</option><option>Spot Paint Repair</option><option>Other</option><option>PDR</option>
+          <option>Refresh</option><option>Signature</option><option>Elite</option>
+          <option>PPF</option><option>Wrap</option><option>Ceramic</option>
+          <option>Paint Correction</option><option>Spot Paint Repair</option><option>Other</option>
         </select>
       </div>
       <div class="field"><label>Vehicle Year</label><select id="nl-year"><option value="">Year...</option></select></div>
@@ -710,22 +709,22 @@ async function fullSync() {
     // Pull all cloud data (paginated)
     var [cRows, jRows, eRows, cmRows] = await Promise.all([ sbFetch('clients'), sbFetch('jobs'), sbFetch('expenses'), sbFetch('comms') ]);
 
-    // Merge: cloud wins for existing IDs, keep any local-only records
+    // Merge: cloud is authoritative for real IDs. Only keep local records with temp IDs (never synced yet).
     var cloudClientIds = new Set(cRows.map(function(r){ return r.id; }));
-    var localOnly = clients.filter(function(c){ return !cloudClientIds.has(c.id); });
-    clients = cRows.map(mapClient).concat(localOnly);
+    var unsavedClients = clients.filter(function(c){ return !cloudClientIds.has(c.id) && c.id > 9999999999999; });
+    clients = cRows.map(mapClient).concat(unsavedClients);
 
     var cloudJobIds = new Set(jRows.map(function(r){ return r.id; }));
-    var localOnlyJ = jobs.filter(function(j){ return !cloudJobIds.has(j.id); });
-    jobs = jRows.map(mapJob).concat(localOnlyJ);
+    var unsavedJobs = jobs.filter(function(j){ return !cloudJobIds.has(j.id) && j.id > 9999999999999; });
+    jobs = jRows.map(mapJob).concat(unsavedJobs);
 
     var cloudExpIds = new Set(eRows.map(function(r){ return r.id; }));
-    var localOnlyE = expenses.filter(function(e){ return !cloudExpIds.has(e.id); });
-    expenses = eRows.map(mapExpense).concat(localOnlyE);
+    var unsavedExp = expenses.filter(function(e){ return !cloudExpIds.has(e.id) && e.id > 9999999999999; });
+    expenses = eRows.map(mapExpense).concat(unsavedExp);
 
     var cloudCommIds = new Set(cmRows.map(function(r){ return r.id; }));
-    var localOnlyC = comms.filter(function(c){ return !cloudCommIds.has(c.id); });
-    comms = cmRows.map(mapComm).concat(localOnlyC);
+    var unsavedComms = comms.filter(function(c){ return !cloudCommIds.has(c.id) && c.id > 9999999999999; });
+    comms = cmRows.map(mapComm).concat(unsavedComms);
 
     saveCache();
     setSyncStatus('online', 'Synced '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));
