@@ -1623,6 +1623,41 @@ async function boot(){
   renderDashboard();
   document.getElementById('mj-date').value=today();
   document.getElementById('me-date').value=today();
+  document.getElementById('loading-msg').textContent='Testing Supabase connection...';
+
+  // ── DIAGNOSTIC: test read + write before anything else ──
+  try {
+    // Test read
+    var testRead = await fetch(SUPA_URL + '/rest/v1/clients?limit=1', {headers: sbHeaders(), cache:'no-store'});
+    if (!testRead.ok) {
+      var readErr = await testRead.text();
+      throw new Error('READ FAILED ('+testRead.status+'): ' + readErr);
+    }
+
+    // Test write — insert a dummy row then delete it
+    var testInsert = await fetch(SUPA_URL + '/rest/v1/clients', {
+      method:'POST', headers: sbHeaders(),
+      body: JSON.stringify({name:'__test__', phone:'', email:'', vehicle:'', notes:''}),
+      cache:'no-store'
+    });
+    if (!testInsert.ok) {
+      var writeErr = await testInsert.text();
+      throw new Error('WRITE BLOCKED ('+testInsert.status+'): ' + writeErr + '\n\nThis is usually a Supabase RLS (Row Level Security) policy blocking inserts. Go to your Supabase dashboard → Table Editor → clients → RLS Policies and either disable RLS or add an insert policy for the anon role.');
+    }
+    var testRow = await testInsert.json();
+    var testId = Array.isArray(testRow) ? testRow[0].id : testRow.id;
+    // Clean up test row
+    await fetch(SUPA_URL + '/rest/v1/clients?id=eq.'+testId, {method:'DELETE', headers:sbHeaders(), cache:'no-store'});
+    console.log('✅ Supabase read + write: OK');
+
+  } catch(diagErr) {
+    document.getElementById('loading-screen').style.display='none';
+    alert('⚠️ SUPABASE PROBLEM DETECTED\n\n' + diagErr.message + '\n\nYour contacts cannot be saved until this is fixed. They will disappear on every refresh.');
+    setSyncStatus('offline', 'Supabase error — see alert');
+    return;
+  }
+  // ── END DIAGNOSTIC ──
+
   document.getElementById('loading-msg').textContent='Connecting to cloud...';
   await fullSync();
   document.getElementById('loading-screen').style.display='none';
