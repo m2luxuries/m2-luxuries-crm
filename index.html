@@ -668,10 +668,23 @@ function sbHeaders() {
   };
 }
 async function sbGet(table, params) {
-  var url = SUPA_URL + '/rest/v1/' + table + '?order=id.asc' + (params || '');
-  var res = await fetch(url, { headers: sbHeaders(), cache: 'no-store' });
-  if (!res.ok) { var e = await res.text(); throw new Error('DB read failed: ' + e + ' ('+res.status+')'); }
-  return res.json();
+  // Paginate to get ALL rows — Supabase caps at 1000 per request
+  var all = [];
+  var pageSize = 1000;
+  var offset = 0;
+  while(true) {
+    var url = SUPA_URL + '/rest/v1/' + table + '?order=id.asc&limit=' + pageSize + '&offset=' + offset + (params || '');
+    var res = await fetch(url, {headers: sbHeaders(), cache: 'no-store'});
+    if (!res.ok) {
+      var errText = await res.text();
+      throw new Error('DB read failed: ' + errText + ' ('+res.status+')');
+    }
+    var rows = await res.json();
+    all = all.concat(rows);
+    if (rows.length < pageSize) break; // last page
+    offset += pageSize;
+  }
+  return all;
 }
 async function sbInsert(table, data) {
   var res = await fetch(SUPA_URL + '/rest/v1/' + table, { method:'POST', headers:sbHeaders(), body:JSON.stringify(data), cache:'no-store' });
@@ -785,8 +798,18 @@ async function fullSync() {
   }
 }
 
-function mapClient(r){return{id:r.id,name:r.name||'',vehicle:r.vehicle||'',phone:r.phone||'',email:r.email||'',notes:r.notes||''};}
-function mapJob(r){return{id:r.id,clientId:r.client_id,service:r.service||'',price:parseFloat(r.price)||0,status:r.status||'Lead',date:r.date||'',appointmentTime:r.appointment_time||'',notes:r.notes||'',vehicleYear:r.vehicle_year||'',vehicleMake:r.vehicle_make||'',vehicleModel:r.vehicle_model||'',photos:[]};}
+function mapClient(r){
+  // Handle vehicle stored in name e.g. "Aaron (Honda Accord) Shaddox"
+  // Also handle extra columns (created_at, next_followup_date, garage) gracefully
+  return {
+    id: r.id,
+    name: r.name||'',
+    vehicle: r.vehicle||'',
+    phone: r.phone||'',
+    email: r.email||'',
+    notes: r.notes||''
+  };
+}function mapJob(r){return{id:r.id,clientId:r.client_id,service:r.service||'',price:parseFloat(r.price)||0,status:r.status||'Lead',date:r.date||'',appointmentTime:r.appointment_time||'',notes:r.notes||'',vehicleYear:r.vehicle_year||'',vehicleMake:r.vehicle_make||'',vehicleModel:r.vehicle_model||'',photos:[]};}
 function mapExpense(r){return{id:r.id,name:r.name||'',cat:r.cat||'Other',amount:parseFloat(r.amount)||0,date:r.date||'',notes:r.notes||''};}
 function mapComm(r){return{id:r.id,clientId:r.client_id,type:r.type||'note',body:r.body||'',ts:r.ts||'',jobId:r.job_id||0};}
 
