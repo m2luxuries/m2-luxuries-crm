@@ -402,7 +402,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="list-row" style="border-bottom:none;cursor:default">
       <div class="row-info">
         <div class="row-name" id="gc-status-text">Not connected</div>
-        <div class="row-sub">Auto-save new clients to your Google Contacts</div>
+        <div class="row-sub">Every new client is automatically saved to your Google Contacts</div>
       </div>
       <button class="hbtn" id="gc-btn" onclick="gcConnect()">Connect</button>
     </div>
@@ -1637,44 +1637,34 @@ function gcUpdateUI() {
   var statusEl = document.getElementById('gc-status-text');
   var btnEl    = document.getElementById('gc-btn');
   if (!statusEl || !btnEl) return;
-  if (gcAccessToken) {
-    statusEl.textContent = '🟢 Connected to Google Contacts';
-    statusEl.style.color = 'var(--green)';
-    btnEl.textContent = 'Disconnect';
-  } else {
-    statusEl.textContent = 'Not connected';
-    statusEl.style.color = 'var(--text)';
-    btnEl.textContent = 'Connect';
-  }
+  statusEl.textContent = '🟢 Auto-saving to Google Contacts';
+  statusEl.style.color = 'var(--green)';
+  if (btnEl) btnEl.style.display = 'none';
 }
 
 async function gcCreateContact(client) {
-  if (!gcAccessToken) return;
-  var nameParts = client.name.trim().split(' ');
-  var firstName = nameParts[0];
-  var lastName  = nameParts.slice(1).join(' ');
-  var body = {
-    names: [{ givenName: firstName, familyName: lastName }],
-    phoneNumbers: client.phone ? [{ value: client.phone, type: 'mobile' }] : [],
-    emailAddresses: client.email ? [{ value: client.email, type: 'home' }] : [],
-    biographies: [{ value: 'M2 Luxuries Client' + (client.vehicle ? ' — ' + client.vehicle : '') + (client.notes ? ' | ' + client.notes : ''), contentType: 'TEXT_PLAIN' }]
-  };
+  // Call Netlify Function — handles token refresh automatically, no login needed
   try {
-    var res = await fetch('https://people.googleapis.com/v1/people:createContact', {
+    var res = await fetch('/.netlify/functions/google-contacts', {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + gcAccessToken, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name:    client.name    || '',
+        phone:   client.phone   || '',
+        email:   client.email   || '',
+        vehicle: client.vehicle || '',
+        notes:   client.notes   || ''
+      })
     });
-    if (res.status === 401) {
-      gcAccessToken = null;
-      localStorage.removeItem('gc_token');
-      gcUpdateUI();
-      showToast('⚠️ Google session expired — reconnect in More');
-      return;
+    var data = await res.json();
+    if (data.success) {
+      console.log('✅ Google Contact created:', client.name);
+    } else {
+      console.warn('Google Contact failed:', data.error);
     }
-    if (res.ok) { console.log('✅ Google Contact created:', client.name); }
-    else { console.warn('Google Contact failed:', await res.text()); }
-  } catch(e) { console.warn('Google Contacts error (non-blocking):', e); }
+  } catch(e) {
+    console.warn('Google Contacts error (non-blocking):', e);
+  }
 }
 
 window.addEventListener('load', function() {
