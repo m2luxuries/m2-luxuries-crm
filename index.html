@@ -217,6 +217,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 .empty-icon{font-size:32px;margin-bottom:8px}
 .empty-text{font-size:13px}
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -396,6 +397,17 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="sum-row"><span class="sum-lbl">Total Expenses</span><span style="color:var(--red);font-weight:600" id="sum-exp">$0</span></div>
     <div class="sum-row total"><span>Net Profit</span><span id="sum-profit">$0</span></div>
   </div>
+  <div class="card" id="gc-card">
+    <div class="section-title">Google Contacts</div>
+    <div class="list-row" style="border-bottom:none;cursor:default">
+      <div class="row-info">
+        <div class="row-name" id="gc-status-text">Not connected</div>
+        <div class="row-sub">Auto-save new clients to your Google Contacts</div>
+      </div>
+      <button class="hbtn" id="gc-btn" onclick="gcConnect()">Connect</button>
+    </div>
+  </div>
+
   <div class="card">
     <div class="section-title">Cloud Sync</div>
     <div class="list-row" style="border-bottom:none;cursor:default">
@@ -469,7 +481,6 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="field"><label>Service *</label>
       <select id="mj-service">
         <option value="">Select service...</option>
-        <option>Interior</option><option>Exterior</option><option>Hand Wash</option>
         <option>Refresh</option><option>Signature</option><option>Elite</option>
         <option>PPF</option><option>Wrap</option><option>Ceramic</option>
         <option>Paint Correction</option><option>Spot Paint Repair</option><option>Other</option>
@@ -961,6 +972,8 @@ async function saveClient() {
     clients.push(Object.assign({id:tempId}, data));
     saveCache(); renderClients(); renderDashboard(); showPage('clients');
     showToast('✓ Client added');
+    // Push to Google Contacts in background
+    gcCreateContact(Object.assign({id:tempId}, data));
     // Push to cloud in background
     try {
       var row = await sbInsert('clients', data);
@@ -1313,6 +1326,7 @@ function deleteExpense(id) {
   });
 }
 function renderMore() {
+  gcUpdateUI();
   document.getElementById('expenses-list').innerHTML = expenses.length
     ? expenses.map(function(e){ return '<div class="expense-row"><div><div class="expense-name">'+e.name+'</div><div class="expense-cat">'+e.cat+(e.date?' · '+e.date:'')+'</div></div><div style="display:flex;align-items:center;gap:8px"><div class="expense-amount">-'+fmt(e.amount)+'</div><button class="del-btn" onclick="deleteExpense('+e.id+')">Del</button></div></div>'; }).join('')
     : emptyState('💸','No expenses yet. Tap + Exp.');
@@ -1422,6 +1436,8 @@ async function saveNewLead() {
   var localJob = {id:tempJobId, clientId:tempClientId, service:service, price:price, status:'Lead', date:date, time:time, notes:'', year:year, make:make, model:model, photos:[]};
   clients.push(localClient); jobs.push(localJob);
   saveCache(); renderDashboard(); renderPipeline(); showToast('🎯 Lead saved — '+name);
+  // Push to Google Contacts
+  gcCreateContact(localClient);
   setTimeout(function(){ viewJob(localJob.id); }, 300);
 
   // Push to cloud in background
@@ -1566,6 +1582,105 @@ function clearAllLocalData() {
 // ═══════════════════════════════════════════
 // BOOT
 // ═══════════════════════════════════════════
+
+// ═══════════════════════════════════════════
+// GOOGLE CONTACTS INTEGRATION
+// ═══════════════════════════════════════════
+var GC_CLIENT_ID = '746251643232-bne2giinf52mn954ptske85eeimdl4k0.apps.googleusercontent.com';
+var GC_SCOPE = 'https://www.googleapis.com/auth/contacts';
+var gcTokenClient = null;
+var gcAccessToken = null;
+
+(function gcLoadToken() {
+  try {
+    var saved = JSON.parse(localStorage.getItem('gc_token') || 'null');
+    if (saved && saved.token && saved.expiry > Date.now()) {
+      gcAccessToken = saved.token;
+    } else {
+      localStorage.removeItem('gc_token');
+    }
+  } catch(e) {}
+})();
+
+function gcInitClient() {
+  if (!window.google || !window.google.accounts) return;
+  gcTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GC_CLIENT_ID,
+    scope: GC_SCOPE,
+    callback: function(response) {
+      if (response.error) { showToast('⚠️ Google Contacts connection failed'); return; }
+      gcAccessToken = response.access_token;
+      localStorage.setItem('gc_token', JSON.stringify({
+        token: gcAccessToken,
+        expiry: Date.now() + (55 * 60 * 1000)
+      }));
+      gcUpdateUI();
+      showToast('✅ Google Contacts connected!');
+    }
+  });
+}
+
+function gcConnect() {
+  if (!gcTokenClient) { gcInitClient(); }
+  if (!gcTokenClient) { showToast('⚠️ Google API not loaded — try again in a moment'); return; }
+  if (gcAccessToken) {
+    gcAccessToken = null;
+    localStorage.removeItem('gc_token');
+    gcUpdateUI();
+    showToast('✓ Google Contacts disconnected');
+  } else {
+    gcTokenClient.requestAccessToken();
+  }
+}
+
+function gcUpdateUI() {
+  var statusEl = document.getElementById('gc-status-text');
+  var btnEl    = document.getElementById('gc-btn');
+  if (!statusEl || !btnEl) return;
+  if (gcAccessToken) {
+    statusEl.textContent = '🟢 Connected to Google Contacts';
+    statusEl.style.color = 'var(--green)';
+    btnEl.textContent = 'Disconnect';
+  } else {
+    statusEl.textContent = 'Not connected';
+    statusEl.style.color = 'var(--text)';
+    btnEl.textContent = 'Connect';
+  }
+}
+
+async function gcCreateContact(client) {
+  if (!gcAccessToken) return;
+  var nameParts = client.name.trim().split(' ');
+  var firstName = nameParts[0];
+  var lastName  = nameParts.slice(1).join(' ');
+  var body = {
+    names: [{ givenName: firstName, familyName: lastName }],
+    phoneNumbers: client.phone ? [{ value: client.phone, type: 'mobile' }] : [],
+    emailAddresses: client.email ? [{ value: client.email, type: 'home' }] : [],
+    biographies: [{ value: 'M2 Luxuries Client' + (client.vehicle ? ' — ' + client.vehicle : '') + (client.notes ? ' | ' + client.notes : ''), contentType: 'TEXT_PLAIN' }]
+  };
+  try {
+    var res = await fetch('https://people.googleapis.com/v1/people:createContact', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + gcAccessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (res.status === 401) {
+      gcAccessToken = null;
+      localStorage.removeItem('gc_token');
+      gcUpdateUI();
+      showToast('⚠️ Google session expired — reconnect in More');
+      return;
+    }
+    if (res.ok) { console.log('✅ Google Contact created:', client.name); }
+    else { console.warn('Google Contact failed:', await res.text()); }
+  } catch(e) { console.warn('Google Contacts error (non-blocking):', e); }
+}
+
+window.addEventListener('load', function() {
+  setTimeout(function() { gcInitClient(); gcUpdateUI(); }, 1200);
+});
+
 async function boot() {
   document.getElementById('loading-msg').textContent='Loading saved data...';
   loadCache();
