@@ -21,17 +21,15 @@ async function getAccessToken() {
 }
 
 async function checkCalendarAvailability(accessToken, date) {
-  // Use full UTC day range to catch all events regardless of timezone
-  const timeMin = date + 'T00:00:00Z';
-  const timeMax = date + 'T23:59:59Z';
+  // Query in Central time (America/Chicago) to avoid cross-day bleed
+  // CDT = UTC-5 (March-Nov), CST = UTC-6 (Nov-March)
+  // May = CDT = UTC-5
+  const timeMin = date + 'T00:00:00-05:00';
+  const timeMax = date + 'T23:59:59-05:00';
 
-  const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime`;
+  const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime&timeZone=America/Chicago`;
 
-  console.log('Checking calendar for date:', date);
-
-  const res = await fetch(url, {
-    headers: { 'Authorization': 'Bearer ' + accessToken }
-  });
+  const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + accessToken } });
 
   if (!res.ok) {
     console.warn('Calendar check failed:', res.status, await res.text());
@@ -39,50 +37,52 @@ async function checkCalendarAvailability(accessToken, date) {
   }
 
   const data = await res.json();
-  console.log('Events found:', JSON.stringify(data.items?.map(e => ({
-    summary: e.summary,
-    start: e.start,
-    end: e.end,
-    status: e.status
-  }))));
-
   const busyHours = new Set();
 
   (data.items || []).forEach(event => {
     if (event.status === 'cancelled') return;
 
-    // All-day event (date only, no time)
+    // All-day event
     if (event.start && event.start.date && !event.start.dateTime) {
       busyHours.add('ALL_DAY');
       return;
     }
 
     if (event.start && event.start.dateTime) {
-      const startDT = new Date(event.start.dateTime);
-      const endDT   = new Date(event.end.dateTime);
+      // Parse the dateTime string directly — Google returns it in the event's timezone
+      // e.g. "2026-05-27T06:00:00-05:00"
+      const startStr = event.start.dateTime;
+      const endStr   = event.end.dateTime;
 
-      // Convert to Central time (UTC-5 CDT / UTC-6 CST)
-      // Use getUTCHours and subtract offset
-      const startUTC = startDT.getTime();
-      const endUTC   = endDT.getTime();
+      // Extract just the local time part (HH:MM) regardless of timezone suffix
+      // by converting to Central time using Intl
+      const startDT = new Date(startStr);
+      const endDT   = new Date(endStr);
 
-      // Central offset: -5 hours (CDT, May = summer)
-      const offsetMs = 5 * 60 * 60 * 1000;
+      // Get hours in Central time
+      const centralFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Chicago',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: false
+      });
 
-      const startCentral = new Date(startUTC - offsetMs);
-      const endCentral   = new Date(endUTC - offsetMs);
+      const startParts = centralFormatter.formatToParts(startDT);
+      const endParts   = centralFormatter.formatToParts(endDT);
 
-      const startHr = startCentral.getUTCHours();
-      const endHr   = endCentral.getUTCHours() + (endCentral.getUTCMinutes() > 0 ? 1 : 0);
+      const startHr = parseInt(startParts.find(p => p.type === 'hour').value);
+      const endMin  = parseInt(endParts.find(p => p.type === 'minute').value);
+      let   endHr   = parseInt(endParts.find(p => p.type === 'hour').value);
+      if (endMin > 0) endHr++; // round up
 
       console.log(`Event: "${event.summary}" — Central ${startHr}:00 to ${endHr}:00`);
 
-      // Block all hours the event covers
-      for (let h = startHr; h < endHr; h++) {
+      // Block all hours this event covers
+      for (let h = startHr; h < endHr && h < 24; h++) {
         busyHours.add(h);
       }
 
-      // If event covers entire work day (6am-6pm or more), block all day
+      // If covers whole work day
       if (startHr <= 6 && endHr >= 18) {
         busyHours.add('ALL_DAY');
       }
@@ -109,7 +109,7 @@ exports.handler = async function(event) {
     // ── CHECK AVAILABILITY ─────────────────────────────────────────
     if (body.action === 'check_availability') {
       const busySlots = await checkCalendarAvailability(accessToken, body.date);
-      console.log('Returning busy slots:', busySlots);
+      console.log('Busy slots for', body.date, ':', busySlots);
       return { statusCode: 200, headers, body: JSON.stringify({ busySlots }) };
     }
 
