@@ -1,5 +1,4 @@
 // netlify/functions/google-contacts.js
-// Handles Google Contacts creation + Calendar availability checking
 
 const CLIENT_ID     = process.env.GOOGLE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -22,39 +21,75 @@ async function getAccessToken() {
 }
 
 async function checkCalendarAvailability(accessToken, date) {
-  // Check Google Calendar for busy slots on the given date (YYYY-MM-DD)
-  const start = date + 'T00:00:00-06:00'; // Central time
-  const end   = date + 'T23:59:59-06:00';
+  // Use full UTC day range to catch all events regardless of timezone
+  const timeMin = date + 'T00:00:00Z';
+  const timeMax = date + 'T23:59:59Z';
 
-  const res = await fetch(
-    `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(start)}&timeMax=${encodeURIComponent(end)}&singleEvents=true&orderBy=startTime`,
-    { headers: { 'Authorization': 'Bearer ' + accessToken } }
-  );
+  const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime`;
+
+  console.log('Checking calendar for date:', date);
+
+  const res = await fetch(url, {
+    headers: { 'Authorization': 'Bearer ' + accessToken }
+  });
 
   if (!res.ok) {
-    console.warn('Calendar check failed:', await res.text());
-    return []; // fail open — don't block booking if calendar check fails
+    console.warn('Calendar check failed:', res.status, await res.text());
+    return [];
   }
 
   const data = await res.json();
-  const busySlots = [];
+  console.log('Events found:', JSON.stringify(data.items?.map(e => ({
+    summary: e.summary,
+    start: e.start,
+    end: e.end,
+    status: e.status
+  }))));
+
+  const busyHours = new Set();
 
   (data.items || []).forEach(event => {
     if (event.status === 'cancelled') return;
-    // All-day event = block entire day
+
+    // All-day event (date only, no time)
     if (event.start && event.start.date && !event.start.dateTime) {
-      busySlots.push('ALL_DAY');
+      busyHours.add('ALL_DAY');
       return;
     }
-    // Timed event — figure out which hours it covers
+
     if (event.start && event.start.dateTime) {
-      const startHr = new Date(event.start.dateTime).getHours();
-      const endHr   = Math.ceil(new Date(event.end.dateTime).getHours() + new Date(event.end.dateTime).getMinutes() / 60);
-      for (let h = startHr; h < endHr; h++) busySlots.push(h);
+      const startDT = new Date(event.start.dateTime);
+      const endDT   = new Date(event.end.dateTime);
+
+      // Convert to Central time (UTC-5 CDT / UTC-6 CST)
+      // Use getUTCHours and subtract offset
+      const startUTC = startDT.getTime();
+      const endUTC   = endDT.getTime();
+
+      // Central offset: -5 hours (CDT, May = summer)
+      const offsetMs = 5 * 60 * 60 * 1000;
+
+      const startCentral = new Date(startUTC - offsetMs);
+      const endCentral   = new Date(endUTC - offsetMs);
+
+      const startHr = startCentral.getUTCHours();
+      const endHr   = endCentral.getUTCHours() + (endCentral.getUTCMinutes() > 0 ? 1 : 0);
+
+      console.log(`Event: "${event.summary}" — Central ${startHr}:00 to ${endHr}:00`);
+
+      // Block all hours the event covers
+      for (let h = startHr; h < endHr; h++) {
+        busyHours.add(h);
+      }
+
+      // If event covers entire work day (6am-6pm or more), block all day
+      if (startHr <= 6 && endHr >= 18) {
+        busyHours.add('ALL_DAY');
+      }
     }
   });
 
-  return busySlots;
+  return Array.from(busyHours);
 }
 
 exports.handler = async function(event) {
@@ -74,14 +109,13 @@ exports.handler = async function(event) {
     // ── CHECK AVAILABILITY ─────────────────────────────────────────
     if (body.action === 'check_availability') {
       const busySlots = await checkCalendarAvailability(accessToken, body.date);
+      console.log('Returning busy slots:', busySlots);
       return { statusCode: 200, headers, body: JSON.stringify({ busySlots }) };
     }
 
     // ── CREATE CONTACT ─────────────────────────────────────────────
-    if (body.action === 'create_contact' || body.name) {
+    if (body.name) {
       const client = body;
-      if (!client.name) return { statusCode: 400, headers, body: 'Missing name' };
-
       const nameParts = client.name.trim().split(' ');
       const contact = {
         names:          [{ givenName: nameParts[0], familyName: nameParts.slice(1).join(' ') }],
@@ -109,7 +143,7 @@ exports.handler = async function(event) {
     return { statusCode: 400, headers, body: 'Unknown action' };
 
   } catch(err) {
-    console.error('Function error:', err);
+    console.error('Function error:', err.message);
     return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: err.message }) };
   }
 };
