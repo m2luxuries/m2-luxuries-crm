@@ -249,6 +249,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="status-tile quoted"   onclick="showPage('pipeline');filterPipeline('Quoted')"><div class="status-tile-num" id="sb-quoted">0</div><div class="status-tile-lbl">Quoted</div></div>
     <div class="status-tile booked"   onclick="showPage('pipeline');filterPipeline('Booked')"><div class="status-tile-num" id="sb-booked">0</div><div class="status-tile-lbl">Booked</div></div>
     <div class="status-tile progress" onclick="showPage('pipeline');filterPipeline('In Progress')"><div class="status-tile-num" id="sb-prog">0</div><div class="status-tile-lbl">In Prog</div></div>
+    <div class="status-tile" style="background:rgba(255,193,7,.12);border-color:rgba(255,193,7,.3)" onclick="showPage('pipeline');filterPipeline('Follow Up')"><div class="status-tile-num" id="sb-followup" style="color:#FFC107">0</div><div class="status-tile-lbl" style="color:#FFC107">Follow Up</div></div>
     <div class="status-tile complete" onclick="showPage('pipeline');filterPipeline('Complete')"><div class="status-tile-num" id="sb-done">0</div><div class="status-tile-lbl">Done</div></div>
   </div>
   <div class="card"><div class="section-title">Upcoming Schedule</div><div id="d-upcoming"></div></div>
@@ -337,6 +338,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <input type="file" id="photo-input" accept="image/*" multiple style="display:none">
   </div>
   <div id="jd-convert-wrap"></div>
+  <div id="jd-followup-wrap"></div>
   <div style="display:flex;gap:8px;margin-top:4px">
     <button class="hbtn" style="flex:1;padding:12px" onclick="editJob()">✏️ Edit</button>
     <button class="hbtn" style="flex:1;padding:12px;color:var(--red);border-color:rgba(244,67,54,.3)" onclick="confirmDeleteJob()">🗑 Delete</button>
@@ -354,6 +356,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="status-tile quoted"   onclick="filterPipeline('Quoted')"><div class="status-tile-num" id="pt-quoted">0</div><div class="status-tile-lbl">Quoted</div></div>
     <div class="status-tile booked"   onclick="filterPipeline('Booked')"><div class="status-tile-num" id="pt-booked">0</div><div class="status-tile-lbl">Booked</div></div>
     <div class="status-tile progress" onclick="filterPipeline('In Progress')"><div class="status-tile-num" id="pt-prog">0</div><div class="status-tile-lbl">In Prog</div></div>
+    <div class="status-tile" style="background:rgba(255,193,7,.12);border-color:rgba(255,193,7,.3)" onclick="filterPipeline('Follow Up')"><div class="status-tile-num" id="pt-followup" style="color:#FFC107">0</div><div class="status-tile-lbl" style="color:#FFC107">Follow Up</div></div>
     <div class="status-tile complete" onclick="filterPipeline('Complete')"><div class="status-tile-num" id="pt-done">0</div><div class="status-tile-lbl">Done</div></div>
   </div>
   <div class="card"><div id="pipeline-content"></div></div>
@@ -491,7 +494,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="field"><label>Vehicle Model</label><select id="mj-model"><option value="">Model...</option></select></div>
     <div class="field"><label>Price ($)</label><input id="mj-price" type="number" min="0" step="0.01" placeholder="0.00"></div>
     <div class="field"><label>Status</label>
-      <select id="mj-status"><option>Lead</option><option>Quoted</option><option>Booked</option><option>In Progress</option><option>Complete</option></select>
+      <select id="mj-status"><option>Lead</option><option>Quoted</option><option>Booked</option><option>In Progress</option><option>Complete</option><option>Follow Up</option></select>
     </div>
     <div class="field"><label>Date</label><input id="mj-date" type="date"></div>
     <div class="field"><label>Time</label><input id="mj-time" type="time"></div>
@@ -757,7 +760,7 @@ function setSyncStatus(state, msg) {
 // UTILITIES
 // ═══════════════════════════════════════════
 function initials(n) { return n.trim().split(' ').filter(Boolean).map(function(w){return w[0];}).join('').toUpperCase().slice(0,2)||'?'; }
-function statusBadge(s) { return ({Complete:'badge-complete',Lead:'badge-lead',Quoted:'badge-quoted',Booked:'badge-booked','In Progress':'badge-progress'})[s]||'badge-progress'; }
+function statusBadge(s) { return ({Complete:'badge-complete',Lead:'badge-lead',Quoted:'badge-quoted',Booked:'badge-booked','In Progress':'badge-progress','Follow Up':'badge-followup'})[s]||'badge-progress'; }
 function fmt(n) { var v=parseFloat(String(n||0).replace(/[^0-9.\-]/g,''))||0; return '$'+v.toFixed(2).replace(/\.00$/,'').replace(/\B(?=(\d{3})+(?!\d))/g,','); }
 function today() { return new Date().toISOString().slice(0,10); }
 function tsNow() { return new Date().toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}); }
@@ -851,13 +854,15 @@ function renderDashboard() {
   var dp = document.getElementById('d-profit'); dp.textContent=fmt(profit); dp.style.color=profit<0?'var(--red)':'var(--text)';
   document.getElementById('d-leads').textContent = leads;
 
-  var counts = { Lead:0, Quoted:0, Booked:0, 'In Progress':0, Complete:0 };
+  var counts = { Lead:0, Quoted:0, Booked:0, 'In Progress':0, Complete:0, 'Follow Up':0 };
   jobs.forEach(function(j){ if(counts[j.status]!==undefined) counts[j.status]++; });
   document.getElementById('sb-lead').textContent = counts.Lead;
   document.getElementById('sb-quoted').textContent = counts.Quoted;
   document.getElementById('sb-booked').textContent = counts.Booked;
   document.getElementById('sb-prog').textContent = counts['In Progress'];
   document.getElementById('sb-done').textContent = counts.Complete;
+  if(document.getElementById('sb-followup')) document.getElementById('sb-followup').textContent = counts['Follow Up'];
+  if(document.getElementById('pt-followup')) document.getElementById('pt-followup').textContent = counts['Follow Up'];
 
   var upcoming = jobs.filter(function(j){ return j.status==='Booked'||j.status==='In Progress'; })
     .sort(function(a,b){ return (a.date+a.time).localeCompare(b.date+b.time); }).slice(0,10);
@@ -880,6 +885,92 @@ function jobRowHtml(j, c) {
     +'<div class="job-meta">'+(v?v+' · ':'')+j.service+'</div>'
     +'<div class="job-meta">'+(j.date||'')+(j.time?' · 🕒 '+tFmt(j.time):'')+'</div></div>'
     +'<div class="job-right"><div class="job-price">'+fmt(j.price)+'</div><span class="badge '+statusBadge(j.status)+'">'+j.status+'</span></div></div>';
+}
+
+
+// ═══════════════════════════════════════════
+// FOLLOW-UP SCHEDULER
+// ═══════════════════════════════════════════
+function fuBtn(j, days, label) {
+  var isActive = j.followUpDays === days;
+  var style = isActive
+    ? 'background:rgba(255,193,7,.2);border-color:#FFC107;color:#FFC107;font-weight:700;'
+    : 'background:var(--card2);border-color:var(--border);color:var(--muted);';
+  return '<button style="'+style+'padding:.75rem;border-radius:4px;font-family:var(--font);font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .2s;border:.5px solid" onclick="setFollowUp('+j.id+','+days+')">'+label+'</button>';
+}
+
+async function setFollowUp(jobId, days) {
+  var j = jobs.find(function(x){ return x.id===jobId; });
+  if (!j) return;
+  var c = getClientById(j.clientId);
+  if (!c) return;
+
+  // If same days already set — toggle off
+  if (j.followUpDays === days) {
+    j.followUpDays = null;
+    j.followUpDate = null;
+    showToast('✓ Follow-up reminder removed');
+  } else {
+    // Calculate follow-up date
+    var fuDate = new Date();
+    fuDate.setDate(fuDate.getDate() + days);
+    var fuStr = fuDate.getFullYear()+'-'+String(fuDate.getMonth()+1).padStart(2,'0')+'-'+String(fuDate.getDate()).padStart(2,'0');
+
+    j.followUpDays = days;
+    j.followUpDate = fuStr;
+
+    // Create a Follow Up job card
+    var fuJobData = {
+      client_id:     j.clientId,
+      service:       j.service,
+      price:         j.price,
+      status:        'Follow Up',
+      date:          fuStr,
+      notes:         'Auto follow-up — '+days+' days since last '+j.service+'. Schedule from Moe.',
+      vehicle_year:  j.vehicleYear  || null,
+      vehicle_make:  j.vehicleMake  || null,
+      vehicle_model: j.vehicleModel || null
+    };
+
+    var tempId = Date.now();
+    var localJob = Object.assign({id:tempId, clientId:j.clientId, appointmentTime:''}, fuJobData);
+    jobs.push(localJob);
+
+    // Save to Supabase
+    try {
+      var row = await sbInsert('jobs', fuJobData);
+      var idx = jobs.findIndex(function(x){ return x.id===tempId; });
+      if (idx>-1) jobs[idx] = mapJob(row);
+    } catch(e) { console.warn('Follow-up job save failed:', e); }
+
+    // Schedule reminder email via Cloudflare Worker
+    try {
+      fetch('https://m2-luxuries.mali-a7f.workers.dev', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          action:      'schedule_followup',
+          clientName:  c.name,
+          clientEmail: c.email || '',
+          clientPhone: c.phone || '',
+          service:     j.service,
+          vehicle:     vehStr(j) || 'their vehicle',
+          days:        days,
+          followUpDate: fuStr
+        })
+      }).then(function(r){ return r.json(); })
+        .then(function(d){ console.log('✅ Follow-up scheduled:', d); })
+        .catch(function(e){ console.warn('Follow-up schedule failed:', e); });
+    } catch(e) { console.warn('Worker call failed:', e); }
+
+    showToast('🔁 Follow-up set for '+days+' days — '+c.name+' will be reminded on '+fuStr);
+  }
+
+  // Update original job in Supabase
+  saveCache();
+  renderJobDetail(jobId);
+  renderDashboard();
+  renderPipeline();
 }
 
 // ═══════════════════════════════════════════
@@ -1071,6 +1162,22 @@ function renderJobDetail(id) {
   renderJobPhotos(j);
   document.getElementById('jd-convert-wrap').innerHTML = j.status==='Lead'
     ? '<button class="convert-btn" onclick="openConvertModal()">⚡ Convert This Lead</button>' : '';
+  // Show follow-up scheduler on Complete jobs
+  var fuWrap = document.getElementById('jd-followup-wrap');
+  if (j.status === 'Complete') {
+    fuWrap.innerHTML = '<div class="card" style="margin-top:0"><div class="section-title">🔁 Schedule Follow-Up</div>'
+      + '<p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem">Tap to auto-schedule a reminder — we will email you AND the client on the selected date.</p>'
+      + '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">'
+      + fuBtn(j, 30,  '30 Days')
+      + fuBtn(j, 60,  '60 Days')
+      + fuBtn(j, 90,  '90 Days')
+      + fuBtn(j, 180, '6 Months')
+      + '</div>'
+      + (j.followUpDate ? '<div style="margin-top:.8rem;font-size:.75rem;color:#FFC107;text-align:center">⏰ Reminder set for '+j.followUpDate+'</div>' : '')
+      + '</div>';
+  } else {
+    fuWrap.innerHTML = '';
+  }
 }
 
 function openAddJob() {
@@ -1200,7 +1307,7 @@ function filterPipeline(status) {
   renderPipeline();
 }
 function renderPipeline() {
-  var counts = { Lead:0, Quoted:0, Booked:0, 'In Progress':0, Complete:0 };
+  var counts = { Lead:0, Quoted:0, Booked:0, 'In Progress':0, Complete:0, 'Follow Up':0 };
   jobs.forEach(function(j){ if(counts[j.status]!==undefined) counts[j.status]++; });
   document.getElementById('pt-lead').textContent=counts.Lead;
   document.getElementById('pt-quoted').textContent=counts.Quoted;
@@ -1208,7 +1315,7 @@ function renderPipeline() {
   document.getElementById('pt-prog').textContent=counts['In Progress'];
   document.getElementById('pt-done').textContent=counts.Complete;
 
-  var stages = pipelineFilter ? [pipelineFilter] : ['Lead','Quoted','Booked','In Progress','Complete'];
+  var stages = pipelineFilter ? [pipelineFilter] : ['Lead','Quoted','Booked','In Progress','Follow Up','Complete'];
   document.getElementById('pipeline-content').innerHTML = stages.map(function(stage){
     var sj = jobs.filter(function(j){ return j.status===stage; });
     // Sort: Booked & In Progress → soonest date first
