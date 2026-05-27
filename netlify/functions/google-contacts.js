@@ -42,6 +42,44 @@ async function sendEmail(to, subject, html) {
   return data;
 }
 
+
+function customerEmailHTML(b, type) {
+  const isConsult = type === 'Consult';
+  const color = isConsult ? '#16a34a' : '#2563eb';
+  const emoji = isConsult ? '🤝' : '✅';
+  const headline = isConsult
+    ? 'Your Complimentary Consult is Confirmed!'
+    : `Your ${b.service} is Confirmed!`;
+  const details = isConsult
+    ? 'Bring your car and we\'ll give you an honest assessment — what it needs, what it\'ll cost, and how long it\'ll take. No commitment required.'
+    : 'Your $25 deposit has been received and your appointment is locked in. We\'ll have everything ready for your vehicle.';
+
+  return `
+  <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#f9f9f9;padding:24px;border-radius:8px">
+    <div style="background:#0a0a0a;padding:20px 24px;border-radius:6px 6px 0 0">
+      <h1 style="color:#ffffff;font-size:22px;margin:0;letter-spacing:2px">M2 LUXURIES</h1>
+      <p style="color:#888;font-size:12px;margin:4px 0 0;letter-spacing:1px">LAS COLINAS · IRVING TX</p>
+    </div>
+    <div style="background:#ffffff;padding:24px;border-radius:0 0 6px 6px;border:1px solid #e5e7eb">
+      <div style="font-size:32px;margin-bottom:12px">${emoji}</div>
+      <h2 style="color:#0a0a0a;font-size:20px;margin:0 0 8px">${headline}</h2>
+      <p style="color:#666;font-size:14px;line-height:1.6;margin-bottom:20px">Hey ${b.name.split(' ')[0]}! ${details}</p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;background:#f9f9f9;border-radius:6px;overflow:hidden">
+        ${b.service  ? `<tr><td style="padding:10px 14px;color:#666;width:40%;border-bottom:1px solid #eee">Service</td><td style="padding:10px 14px;color:#0a0a0a;font-weight:600;border-bottom:1px solid #eee">${b.service}</td></tr>` : ''}
+        ${b.vehicle && b.vehicle !== 'Not specified' ? `<tr><td style="padding:10px 14px;color:#666;border-bottom:1px solid #eee">Vehicle</td><td style="padding:10px 14px;color:#0a0a0a;font-weight:600;border-bottom:1px solid #eee">${b.vehicle}</td></tr>` : ''}
+        ${b.prettyDate ? `<tr><td style="padding:10px 14px;color:#666;border-bottom:1px solid #eee">Date</td><td style="padding:10px 14px;color:#0a0a0a;font-weight:600;border-bottom:1px solid #eee">${b.prettyDate}</td></tr>` : ''}
+        ${b.prettyTime ? `<tr><td style="padding:10px 14px;color:#666;border-bottom:1px solid #eee">Time</td><td style="padding:10px 14px;color:#0a0a0a;font-weight:600;border-bottom:1px solid #eee">${b.prettyTime} Central</td></tr>` : ''}
+        <tr><td style="padding:10px 14px;color:#666">Location</td><td style="padding:10px 14px;color:#0a0a0a;font-weight:600">3102 E Cortez Court, Irving TX 75062</td></tr>
+      </table>
+      <div style="margin-top:20px;padding:14px 16px;background:#f0f9ff;border-left:3px solid ${color};border-radius:4px">
+        <p style="margin:0;font-size:13px;color:#0a0a0a">Questions? Call or text us at <strong><a href="tel:9722451090" style="color:${color};text-decoration:none">972-245-1090</a></strong> or email <a href="mailto:mali@m2luxuries.com" style="color:${color}">mali@m2luxuries.com</a></p>
+      </div>
+      <p style="margin-top:20px;font-size:13px;color:#666;line-height:1.6">We look forward to seeing you and your car. — <strong>Moe &amp; the M2 Team</strong></p>
+    </div>
+    <p style="text-align:center;color:#999;font-size:11px;margin-top:16px">M2 Luxuries · 3102 E Cortez Court, Irving TX 75062 · 972-245-1090</p>
+  </div>`;
+}
+
 function bookingEmailHTML(b, type) {
   const color = type === 'Booking' ? '#2563eb' : type === 'Consult' ? '#16a34a' : '#d97706';
   return `
@@ -187,6 +225,17 @@ exports.handler = async function(event) {
           bookingEmailHTML(emailData, body.service === 'Complimentary Consult' ? 'Consult' : 'Booking')
         );
       } catch(e) { console.warn('Email to Moe failed:', e.message); }
+
+      // Email customer confirmation
+      if (body.email) {
+        try {
+          const type = body.service === 'Complimentary Consult' ? 'Consult' : 'Booking';
+          const subj = type === 'Consult'
+            ? `Your M2 Luxuries Consult is Confirmed — ${emailData.prettyDate}`
+            : `Your ${body.service} is Confirmed — ${emailData.prettyDate}`;
+          await sendEmail(body.email, subj, customerEmailHTML(emailData, type));
+        } catch(e) { console.warn('Customer confirmation email failed:', e.message); }
+      }
 
       // Google Contact
       try { await createContact(accessToken, body); } catch(e) { console.warn('Contact failed:', e.message); }
