@@ -43,6 +43,25 @@ async function sendEmail(to, subject, html) {
 }
 
 
+
+function buildCalendarLinks(b) {
+  const durations = { 'M2 Refresh':2, 'M2 Signature':5, 'M2 Elite':8, 'Complimentary Consult':1 };
+  const hrs = durations[b.service] || 2;
+  const [y,mo,d] = b.date.split('-').map(Number);
+  const [h,mi]   = b.time.split(':').map(Number);
+  const startLocal = new Date(y, mo-1, d, h, mi, 0);
+  const endLocal   = new Date(startLocal.getTime() + hrs * 3600000);
+  const pad = n => String(n).padStart(2,'0');
+  const fmt  = dt => `${dt.getFullYear()}${pad(dt.getMonth()+1)}${pad(dt.getDate())}T${pad(dt.getHours())}${pad(dt.getMinutes())}00`;
+  const startFmt = fmt(startLocal);
+  const endFmt   = fmt(endLocal);
+  const title   = encodeURIComponent(`${b.service} — M2 Luxuries`);
+  const details = encodeURIComponent(`Your ${b.service} at M2 Luxuries. Phone: 972-245-1090`);
+  const loc     = encodeURIComponent('3102 E Cortez Court, Irving TX 75062');
+  const google  = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startFmt}/${endFmt}&details=${details}&location=${loc}`;
+  return { google };
+}
+
 function customerEmailHTML(b, type) {
   const isConsult = type === 'Consult';
   const color = isConsult ? '#16a34a' : '#2563eb';
@@ -75,6 +94,9 @@ function customerEmailHTML(b, type) {
         <p style="margin:0;font-size:13px;color:#0a0a0a">Questions? Call or text us at <strong><a href="tel:9722451090" style="color:${color};text-decoration:none">972-245-1090</a></strong> or email <a href="mailto:mali@m2luxuries.com" style="color:${color}">mali@m2luxuries.com</a></p>
       </div>
       <p style="margin-top:20px;font-size:13px;color:#666;line-height:1.6">We look forward to seeing you and your car. — <strong>Moe &amp; the M2 Team</strong></p>
+      <div style="margin-top:16px">
+        <a href="${buildCalendarLinks(b).google}" target="_blank" style="display:inline-block;background:#0a0a0a;color:#ffffff;font-size:13px;font-weight:600;padding:10px 18px;border-radius:4px;text-decoration:none;margin-right:8px">📅 Add to Google Calendar</a>
+      </div>
     </div>
     <p style="text-align:center;color:#999;font-size:11px;margin-top:16px">M2 Luxuries · 3102 E Cortez Court, Irving TX 75062 · 972-245-1090</p>
   </div>`;
