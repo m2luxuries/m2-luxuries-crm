@@ -1657,7 +1657,7 @@ function gcUpdateUI() {
 async function gcCreateContact(client) {
   // Call Netlify Function — handles token refresh automatically, no login needed
   try {
-    var res = await fetch('/.netlify/functions/google-contacts', {
+    var res = await fetch('https://m2-luxuries.mali-a7f.workers.dev', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
