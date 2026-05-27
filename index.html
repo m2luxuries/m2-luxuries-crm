@@ -1211,6 +1211,18 @@ function renderPipeline() {
   var stages = pipelineFilter ? [pipelineFilter] : ['Lead','Quoted','Booked','In Progress','Complete'];
   document.getElementById('pipeline-content').innerHTML = stages.map(function(stage){
     var sj = jobs.filter(function(j){ return j.status===stage; });
+    // Sort: Booked & In Progress → soonest date first
+    // Lead & Quoted → most recently added (highest id) first
+    // Complete → most recently completed (highest id) first
+    if (stage==='Booked'||stage==='In Progress') {
+      sj.sort(function(a,b){
+        var da = (a.date||'9999')+(a.time||''); 
+        var db = (b.date||'9999')+(b.time||'');
+        return da.localeCompare(db);
+      });
+    } else {
+      sj.sort(function(a,b){ return (b.id > a.id ? 1 : -1); });
+    }
     return '<div class="stage-block"><div class="stage-label">'+stage+' <span class="stage-count">'+sj.length+'</span></div>'
       +(sj.length ? sj.map(function(j){ return jobRowHtml(j,getClientById(j.clientId)); }).join('') : '<div class="empty-stage">No jobs in '+stage+'</div>')
       +'</div>';
