@@ -21,6 +21,41 @@ async function getAccessToken() {
   return data.access_token;
 }
 
+
+// ── SEND EMAIL VIA GMAIL API ─────────────────────────────────────────
+async function sendGmail(accessToken, to, subject, htmlBody) {
+  // Build RFC 2822 email message
+  const message = [
+    `From: M2 Luxuries <mali@m2luxuries.com>`,
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    `MIME-Version: 1.0`,
+    `Content-Type: text/html; charset=utf-8`,
+    ``,
+    htmlBody
+  ].join('\r\n');
+
+  // Base64url encode
+  const encoded = Buffer.from(message).toString('base64')
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+  const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ raw: encoded })
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error('Gmail send failed: ' + err);
+  }
+  console.log('✅ Gmail sent to:', to);
+  return await res.json();
+}
+
 // ── SEND EMAIL VIA RESEND ─────────────────────────────────────────────
 async function sendEmail(to, subject, html) {
   const res = await fetch('https://api.resend.com/emails', {
@@ -248,15 +283,15 @@ exports.handler = async function(event) {
         );
       } catch(e) { console.warn('Email to Moe failed:', e.message); }
 
-      // Email customer confirmation
+      // Email customer confirmation via Gmail
       if (body.email) {
         try {
           const type = body.service === 'Complimentary Consult' ? 'Consult' : 'Booking';
           const subj = type === 'Consult'
             ? `Your M2 Luxuries Consult is Confirmed — ${emailData.prettyDate}`
             : `Your ${body.service} is Confirmed — ${emailData.prettyDate}`;
-          await sendEmail(body.email, subj, customerEmailHTML(emailData, type));
-        } catch(e) { console.warn('Customer confirmation email failed:', e.message); }
+          await sendGmail(accessToken, body.email, subj, customerEmailHTML(emailData, type));
+        } catch(e) { console.warn('Customer Gmail confirmation failed:', e.message); }
       }
 
       // Google Contact
