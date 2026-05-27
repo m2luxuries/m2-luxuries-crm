@@ -36,7 +36,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px}
 .section-title{font-size:9px;font-weight:700;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase;margin-bottom:14px}
 /* STATS */
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:15px;position:relative;overflow:hidden}
 .stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:var(--border2)}
 .stat-label{font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:5px}
@@ -241,16 +241,19 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
   <div class="stats-grid">
     <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value" id="d-rev">$0</div><div class="stat-sub">Completed jobs</div></div>
     <div class="stat-card"><div class="stat-label">Pipeline</div><div class="stat-value" id="d-pipe">$0</div><div class="stat-sub">Active jobs</div></div>
-    <div class="stat-card"><div class="stat-label">Net Profit</div><div class="stat-value" id="d-profit">$0</div><div class="stat-sub">Revenue − expenses</div></div>
-    <div class="stat-card"><div class="stat-label">New Leads</div><div class="stat-value" id="d-leads">0</div><div class="stat-sub">Need follow-up</div></div>
   </div>
-  <div class="status-grid">
-    <div class="status-tile lead"     onclick="showPage('pipeline');filterPipeline('Lead')"><div class="status-tile-num" id="sb-lead">0</div><div class="status-tile-lbl">Lead</div></div>
-    <div class="status-tile quoted"   onclick="showPage('pipeline');filterPipeline('Quoted')"><div class="status-tile-num" id="sb-quoted">0</div><div class="status-tile-lbl">Quoted</div></div>
-    <div class="status-tile booked"   onclick="showPage('pipeline');filterPipeline('Booked')"><div class="status-tile-num" id="sb-booked">0</div><div class="status-tile-lbl">Booked</div></div>
-    <div class="status-tile progress" onclick="showPage('pipeline');filterPipeline('In Progress')"><div class="status-tile-num" id="sb-prog">0</div><div class="status-tile-lbl">In Prog</div></div>
-    <div class="status-tile" style="background:rgba(255,193,7,.12);border-color:rgba(255,193,7,.3)" onclick="showPage('pipeline');filterPipeline('Follow Up')"><div class="status-tile-num" id="sb-followup" style="color:#FFC107">0</div><div class="status-tile-lbl" style="color:#FFC107">Follow Up</div></div>
-    <div class="status-tile complete" onclick="showPage('pipeline');filterPipeline('Complete')"><div class="status-tile-num" id="sb-done">0</div><div class="status-tile-lbl">Done</div></div>
+  <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="status-tile lead"     onclick="showPage('pipeline');filterPipeline('Lead')"     style="flex-direction:row;justify-content:space-between;padding:10px 14px"><div class="status-tile-lbl" style="color:var(--blue)">Lead</div><div class="status-tile-num" id="sb-lead" style="color:var(--blue)">0</div></div>
+      <div class="status-tile quoted"   onclick="showPage('pipeline');filterPipeline('Quoted')"   style="flex-direction:row;justify-content:space-between;padding:10px 14px"><div class="status-tile-lbl" style="color:var(--yellow)">Quoted</div><div class="status-tile-num" id="sb-quoted" style="color:var(--yellow)">0</div></div>
+      <div class="status-tile booked"   onclick="showPage('pipeline');filterPipeline('Booked')"   style="flex-direction:row;justify-content:space-between;padding:10px 14px"><div class="status-tile-lbl" style="color:#ccc">Booked</div><div class="status-tile-num" id="sb-booked" style="color:#ccc">0</div></div>
+      <div class="status-tile progress" onclick="showPage('pipeline');filterPipeline('In Progress')" style="flex-direction:row;justify-content:space-between;padding:10px 14px"><div class="status-tile-lbl" style="color:var(--orange)">In Progress</div><div class="status-tile-num" id="sb-prog" style="color:var(--orange)">0</div></div>
+      <div class="status-tile complete" onclick="showPage('pipeline');filterPipeline('Complete')" style="flex-direction:row;justify-content:space-between;padding:10px 14px"><div class="status-tile-lbl" style="color:var(--green)">Done</div><div class="status-tile-num" id="sb-done" style="color:var(--green)">0</div></div>
+    </div>
+    <div class="status-tile" style="background:rgba(255,193,7,.12);border-color:rgba(255,193,7,.3);min-width:80px;height:100%;align-items:center;justify-content:center;gap:6px;padding:16px 10px" onclick="showPage('pipeline');filterPipeline('Follow Up')">
+      <div class="status-tile-num" id="sb-followup" style="color:#FFC107;font-size:32px">0</div>
+      <div class="status-tile-lbl" style="color:#FFC107;text-align:center">Follow<br>Up</div>
+    </div>
   </div>
   <div class="card"><div class="section-title">Upcoming Schedule</div><div id="d-upcoming"></div></div>
   <div class="card"><div class="section-title">Top Clients by Value</div><div id="d-top-clients"></div></div>
