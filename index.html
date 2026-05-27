@@ -854,8 +854,8 @@ function renderDashboard() {
 
   document.getElementById('d-rev').textContent = fmt(rev);
   document.getElementById('d-pipe').textContent = fmt(pipe);
-  var dp = document.getElementById('d-profit'); dp.textContent=fmt(profit); dp.style.color=profit<0?'var(--red)':'var(--text)';
-  document.getElementById('d-leads').textContent = leads;
+  var dp = document.getElementById('d-profit'); if(dp){ dp.textContent=fmt(profit); dp.style.color=profit<0?'var(--red)':'var(--text)'; }
+  var dl = document.getElementById('d-leads'); if(dl) dl.textContent = leads;
 
   var counts = { Lead:0, Quoted:0, Booked:0, 'In Progress':0, Complete:0, 'Follow Up':0 };
   jobs.forEach(function(j){ if(counts[j.status]!==undefined) counts[j.status]++; });
