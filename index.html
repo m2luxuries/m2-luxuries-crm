@@ -1177,6 +1177,8 @@ function renderJobDetail(id) {
     fuWrap.innerHTML = '<div class="card" style="margin-top:0"><div class="section-title">🔁 Schedule Follow-Up</div>'
       + '<p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem">Tap to auto-schedule a reminder — we will email you AND the client on the selected date.</p>'
       + '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">'
+      + fuBtn(j, 7,   '7 Days')
+      + fuBtn(j, 14,  '14 Days')
       + fuBtn(j, 30,  '30 Days')
       + fuBtn(j, 60,  '60 Days')
       + fuBtn(j, 90,  '90 Days')
@@ -1254,6 +1256,13 @@ async function saveJob() {
 
 function confirmDeleteJob() {
   var j = jobs.find(function(x){ return x.id===viewingJobId; }); if (!j) return;
+
+  // If it's a Returning job, offer reschedule options instead of plain delete
+  if (j.status === 'Returning') {
+    showRescheduleModal(j);
+    return;
+  }
+
   showConfirm('Delete this job?', '"'+j.service+'" will be permanently removed.', async function(){
     jobs = jobs.filter(function(x){ return x.id!==viewingJobId; });
     saveCache(); showToast('✓ Job deleted'); showPage('jobs'); renderDashboard();
@@ -1261,9 +1270,85 @@ function confirmDeleteJob() {
   });
 }
 
+function closeRescheduleOverlay() { var o=document.getElementById('reschedule-overlay'); if(o) o.remove(); }
+
+function showRescheduleModal(j) {
+  var c = getClientById(j.clientId);
+  var name = c ? c.name : 'this client';
+
+  // Build a custom modal overlay
+  var overlay = document.createElement('div');
+  overlay.id = 'reschedule-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:1rem';
+  overlay.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;max-width:320px;width:100%">'
+    + '<div style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:6px">Client Missed Detail</div>'
+    + '<div style="font-size:.85rem;color:var(--muted);margin-bottom:20px">' + name + ' skipped this session. What would you like to do?</div>'
+    + '<div style="display:flex;flex-direction:column;gap:8px">'
+    + '<button onclick="rescheduleJob('+j.id+',7)" style="padding:12px;background:rgba(255,193,7,.15);border:1px solid rgba(255,193,7,.4);color:#FFC107;border-radius:10px;font-family:var(--font);font-size:.85rem;font-weight:700;cursor:pointer">🔁 Reschedule — 7 Days</button>'
+    + '<button onclick="rescheduleJob('+j.id+',14)" style="padding:12px;background:rgba(255,193,7,.15);border:1px solid rgba(255,193,7,.4);color:#FFC107;border-radius:10px;font-family:var(--font);font-size:.85rem;font-weight:700;cursor:pointer">🔁 Reschedule — 14 Days</button>'
+    + '<button onclick="rescheduleJob('+j.id+',30)" style="padding:12px;background:rgba(255,193,7,.15);border:1px solid rgba(255,193,7,.4);color:#FFC107;border-radius:10px;font-family:var(--font);font-size:.85rem;font-weight:700;cursor:pointer">🔁 Reschedule — 30 Days</button>'
+    + '<button onclick="rescheduleJob('+j.id+',60)" style="padding:12px;background:rgba(255,193,7,.15);border:1px solid rgba(255,193,7,.4);color:#FFC107;border-radius:10px;font-family:var(--font);font-size:.85rem;font-weight:700;cursor:pointer">🔁 Reschedule — 60 Days</button>'
+    + '<button onclick="rescheduleJob('+j.id+',90)" style="padding:12px;background:rgba(255,193,7,.15);border:1px solid rgba(255,193,7,.4);color:#FFC107;border-radius:10px;font-family:var(--font);font-size:.85rem;font-weight:700;cursor:pointer">🔁 Reschedule — 90 Days</button>'
+    + '<button onclick="deleteReturningJob('+j.id+')" style="padding:12px;background:rgba(244,67,54,.1);border:1px solid rgba(244,67,54,.3);color:var(--red);border-radius:10px;font-family:var(--font);font-size:.85rem;font-weight:600;cursor:pointer">🗑 Delete — Not Coming Back</button>'
+    + '<button onclick="closeRescheduleOverlay()" style="padding:10px;background:transparent;border:none;color:var(--muted);font-family:var(--font);font-size:.82rem;cursor:pointer">Cancel</button>'
+    + '</div></div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) closeRescheduleOverlay(); });
+}
+
+async function rescheduleJob(jobId, days) {
+  var overlay = document.getElementById('reschedule-overlay');
+  if (overlay) overlay.remove();
+  var j = jobs.find(function(x){ return x.id===jobId; }); if (!j) return;
+  var c = getClientById(j.clientId);
+
+  // Delete old Returning job
+  jobs = jobs.filter(function(x){ return x.id!==jobId; });
+  try { await sbDelete('jobs', jobId); } catch(e){}
+
+  // Create new Returning job with new date
+  var newDate = new Date();
+  newDate.setDate(newDate.getDate() + days);
+  var ds = newDate.getFullYear()+'-'+String(newDate.getMonth()+1).padStart(2,'0')+'-'+String(newDate.getDate()).padStart(2,'0');
+
+  var newJobData = {
+    client_id:     j.clientId,
+    service:       j.service,
+    price:         j.price,
+    status:        'Returning',
+    date:          ds,
+    notes:         'Rescheduled — client missed previous session. New follow-up in '+days+' days.',
+    vehicle_year:  j.vehicleYear  || null,
+    vehicle_make:  j.vehicleMake  || null,
+    vehicle_model: j.vehicleModel || null
+  };
+
+  var tempId = Date.now();
+  jobs.push(Object.assign({id:tempId, clientId:j.clientId, appointmentTime:''}, newJobData));
+  saveCache(); renderDashboard(); renderPipeline();
+  showToast('🔁 Rescheduled — '+days+' days for '+(c?c.name:'client'));
+
+  try {
+    var row = await sbInsert('jobs', newJobData);
+    var idx = jobs.findIndex(function(x){ return x.id===tempId; });
+    if (idx>-1) jobs[idx] = mapJob(row);
+    saveCache();
+  } catch(e){ console.warn('Reschedule save failed:', e); }
+
+  showPage('pipeline');
+}
+
+async function deleteReturningJob(jobId) {
+  var overlay = document.getElementById('reschedule-overlay');
+  if (overlay) overlay.remove();
+  jobs = jobs.filter(function(x){ return x.id!==jobId; });
+  saveCache(); showToast('✓ Job removed'); showPage('pipeline'); renderDashboard();
+  try { await sbDelete('jobs', jobId); } catch(e){}
+}
+
 function changeJobStatus() {
   var j = jobs.find(function(x){ return x.id===viewingJobId; }); if (!j) return;
-  var statuses = ['Lead','Quoted','Booked','In Progress','Complete'];
+  var statuses = ['Lead','Quoted','Booked','In Progress','Complete','Returning','Cold'];
   document.getElementById('status-options').innerHTML = statuses.map(function(s){
     var cur = s===j.status;
     return '<div onclick="setJobStatus(\''+s+'\')" style="padding:13px 14px;border-radius:10px;background:'+(cur?'rgba(240,240,240,.1)':'var(--surface2)')+';border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between"><span style="font-size:14px;font-weight:600">'+s+'</span>'+(cur?'<span style="color:var(--muted)">✓ Current</span>':'')+'</div>';
