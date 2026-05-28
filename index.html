@@ -1722,14 +1722,15 @@ function jeDelete(jobId,idx){var items=jeLoad(jobId);items.splice(idx,1);jeSave(
 // BOOT
 // ═══════════════════════════════════════════
 async function boot(){
-  document.getElementById('loading-msg').textContent='Loading saved data...';
-  loadCache(); renderDashboard();
+  // Show app immediately from cache — never block on network
+  loadCache();
   document.getElementById('mj-date').value=today();
   document.getElementById('me-date').value=today();
-  document.getElementById('loading-msg').textContent='Syncing with cloud...';
-  await fullSync();
+  renderDashboard();
   document.getElementById('loading').style.display='none';
   autoMoveToInProgress();
+  // Sync in background — won't block the UI
+  try{ await fullSync(); }catch(e){ console.warn('Background sync failed:',e); }
 }
 boot();
 setInterval(autoMoveToInProgress,60000);
