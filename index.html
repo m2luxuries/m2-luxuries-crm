@@ -840,6 +840,27 @@ async function fullSync() {
     setSyncStatus('online', 'Synced '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));
     refreshAll();
 
+
+    // Migrate any localStorage job expenses to Supabase
+    for (var mj of jRows) {
+      var localExp = jeLoadLocal(mj.id);
+      if (localExp.length > 0 && !localExp[0].id) {
+        // Has local expenses not yet in Supabase — push them
+        for (var le of localExp) {
+          try {
+            await fetch(SUPA_URL+'/rest/v1/job_expenses', {
+              method: 'POST',
+              headers: Object.assign({}, sbH(), {'Prefer':'return=representation'}),
+              body: JSON.stringify({ job_id: mj.id, description: le.desc, cost: le.cost })
+            });
+          } catch(e) {}
+        }
+        localStorage.removeItem(jeKey(mj.id));
+        delete jobExpensesCache[mj.id];
+        console.log('Migrated expenses for job', mj.id);
+      }
+    }
+
     // One-time migration: fix old 'Follow Up' status in Supabase → 'Returning'
     var oldFollowUps = jRows.filter(function(r){ return r.status === 'Follow Up'; });
     for (var fu of oldFollowUps) {
@@ -1030,7 +1051,7 @@ function renderDashboard() {
 
 function jobRowHtml(j, c) {
   var v = vehStr(j);
-  var jeItems = jeLoad(j.id);
+  var jeItems = jeGetCached(j.id);
   var jeTotal = jeItems.reduce(function(s,i){ return s+(parseFloat(i.cost)||0); }, 0);
   var displayPrice = fmt((j.price||0) + jeTotal);
   return '<div class="job-row" onclick="viewJob('+j.id+')">'
@@ -1308,7 +1329,7 @@ function renderJobDetail(id) {
   document.getElementById('jd-client').textContent = c?c.name:'Unknown';
   document.getElementById('jd-service').textContent = j.service;
   document.getElementById('jd-vehicle').textContent = vehStr(j)||'—';
-  var jeItems = jeLoad(j.id);
+  var jeItems = jeGetCached(j.id);
   var jeTotal = jeItems.reduce(function(s,i){ return s+(parseFloat(i.cost)||0); }, 0);
   var combinedTotal = (j.price||0) + jeTotal;
   var priceEl = document.getElementById('jd-price');
@@ -2228,30 +2249,52 @@ var SERVICE_DURATIONS = {
 
 
 // ═══════════════════════════════════════════
-// JOB EXPENSES
+// JOB EXPENSES (Supabase-backed)
 // ═══════════════════════════════════════════
-// Job expenses stored in localStorage keyed by job ID
+var jobExpensesCache = {}; // { jobId: [{id, desc, cost}] }
+
+// Also keep localStorage as fallback for offline
 function jeKey(jobId) { return 'je_' + jobId; }
+function jeLoadLocal(jobId) { try { return JSON.parse(localStorage.getItem(jeKey(jobId)) || '[]'); } catch(e) { return []; } }
+function jeSaveLocal(jobId, items) { localStorage.setItem(jeKey(jobId), JSON.stringify(items)); }
 
-function jeLoad(jobId) {
-  try { return JSON.parse(localStorage.getItem(jeKey(jobId)) || '[]'); } catch(e) { return []; }
+async function jeFetch(jobId) {
+  try {
+    var r = await fetch(SUPA_URL+'/rest/v1/job_expenses?job_id=eq.'+jobId+'&order=id.asc', { headers: sbH(), cache:'no-store' });
+    if (!r.ok) throw new Error('fetch failed');
+    var rows = await r.json();
+    var items = rows.map(function(r){ return { id:r.id, desc:r.description, cost:parseFloat(r.cost) }; });
+    jobExpensesCache[jobId] = items;
+    jeSaveLocal(jobId, items); // keep local cache in sync
+    return items;
+  } catch(e) {
+    // Fall back to localStorage
+    var local = jeLoadLocal(jobId);
+    jobExpensesCache[jobId] = local;
+    return local;
+  }
 }
 
-function jeSave(jobId, items) {
-  localStorage.setItem(jeKey(jobId), JSON.stringify(items));
+function jeGetCached(jobId) {
+  if (jobExpensesCache[jobId]) return jobExpensesCache[jobId];
+  var local = jeLoadLocal(jobId);
+  jobExpensesCache[jobId] = local;
+  return local;
 }
 
-function renderJobExpenses(jobId) {
+async function renderJobExpenses(jobId) {
   var wrap = document.getElementById('jd-job-expenses-wrap');
   if (!wrap) return;
-  var items = jeLoad(jobId);
-  var total = items.reduce(function(s, i){ return s + (parseFloat(i.cost)||0); }, 0);
+  wrap.innerHTML = '<div class="card"><div class="section-title">🧾 Job Expenses</div><div style="color:var(--muted);font-size:.8rem;padding:6px 0">Loading...</div></div>';
 
-  var rowsHtml = items.length ? items.map(function(item, idx){
+  var items = await jeFetch(jobId);
+  var total = items.reduce(function(s,i){ return s+(parseFloat(i.cost)||0); }, 0);
+
+  var rowsHtml = items.length ? items.map(function(item){
     return '<div class="je-row">'
       + '<div class="je-desc">'+item.desc+'</div>'
       + '<div class="je-cost">$'+parseFloat(item.cost).toFixed(2)+'</div>'
-      + '<button class="je-del" onclick="jeDelete('+jobId+','+idx+')">✕</button>'
+      + '<button class="je-del" onclick="jeDelete('+jobId+','+item.id+')">✕</button>'
       + '</div>';
   }).join('') : '<div style="font-size:.8rem;color:var(--muted);padding:6px 0">No items yet — add below.</div>';
 
@@ -2267,28 +2310,43 @@ function renderJobExpenses(jobId) {
     + '</div>';
 }
 
-function jeAdd(jobId) {
+async function jeAdd(jobId) {
   var descEl = document.getElementById('je-desc-inp');
   var costEl = document.getElementById('je-cost-inp');
   var desc = descEl.value.trim();
   var cost = parseFloat(costEl.value);
   if (!desc || isNaN(cost) || cost <= 0) { showToast('⚠️ Enter item and cost'); return; }
-  var items = jeLoad(jobId);
-  items.push({ desc: desc, cost: cost });
-  jeSave(jobId, items);
-  descEl.value = ''; costEl.value = '';
-  renderJobExpenses(jobId);
-  renderJobDetail(jobId);
-  showToast('✓ Item added');
+
+  try {
+    var r = await fetch(SUPA_URL+'/rest/v1/job_expenses', {
+      method: 'POST',
+      headers: Object.assign({}, sbH(), {'Prefer':'return=representation'}),
+      body: JSON.stringify({ job_id: jobId, description: desc, cost: cost })
+    });
+    if (!r.ok) throw new Error(await r.text());
+    descEl.value = ''; costEl.value = '';
+    delete jobExpensesCache[jobId]; // clear cache so it refetches
+    await renderJobExpenses(jobId);
+    renderJobDetail(jobId);
+    showToast('✓ Item added');
+  } catch(e) {
+    showToast('⚠️ Failed to save — '+e.message);
+  }
 }
 
-function jeDelete(jobId, idx) {
-  var items = jeLoad(jobId);
-  items.splice(idx, 1);
-  jeSave(jobId, items);
-  renderJobExpenses(jobId);
-  renderJobDetail(jobId);
-  showToast('✓ Item removed');
+async function jeDelete(jobId, expenseId) {
+  try {
+    var r = await fetch(SUPA_URL+'/rest/v1/job_expenses?id=eq.'+expenseId, {
+      method: 'DELETE', headers: sbH()
+    });
+    if (!r.ok) throw new Error(await r.text());
+    delete jobExpensesCache[jobId];
+    await renderJobExpenses(jobId);
+    renderJobDetail(jobId);
+    showToast('✓ Item removed');
+  } catch(e) {
+    showToast('⚠️ Failed to delete — '+e.message);
+  }
 }
 
 async function sendPickupNotification(jobId) {
