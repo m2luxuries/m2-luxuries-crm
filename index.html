@@ -975,9 +975,7 @@ function renderDashboard() {
         + '<div class="section-title">🔧 In Progress — ' + inProgressJobs.length + ' Job' + (inProgressJobs.length!==1?'s':'') + '</div>'
         + inProgressJobs.map(function(j){
             var c = getClientById(j.clientId);
-            return '<div style="margin-bottom:4px">'
-              + jobRowHtml(j, c)
-              + '</div>';
+            return jobRowHtml(j, c);
           }).join('')
         + '</div>';
     } else {
