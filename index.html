@@ -397,15 +397,15 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="detail-section"><div class="detail-label">Date</div><div class="detail-value" id="jd-date">—</div></div>
     <div class="detail-section"><div class="detail-label">Notes</div><div class="detail-value" id="jd-notes">—</div></div>
   </div>
+  <div id="jd-convert-wrap"></div>
+  <div id="jd-job-expenses-wrap"></div>
+  <div id="jd-followup-wrap"></div>
   <div class="card">
     <div class="section-title">Photos</div>
     <div id="jd-photos-grid" class="photos-grid"></div>
     <div class="photo-add" onclick="triggerPhotoUpload()">＋</div>
     <input type="file" id="photo-input" accept="image/*" multiple style="display:none">
   </div>
-  <div id="jd-convert-wrap"></div>
-  <div id="jd-job-expenses-wrap"></div>
-  <div id="jd-followup-wrap"></div>
   <div style="display:flex;gap:8px;margin-top:4px">
     <button class="hbtn" style="flex:1;padding:12px" onclick="editJob()">✏️ Edit</button>
     <button class="hbtn" style="flex:1;padding:12px;color:var(--red);border-color:rgba(244,67,54,.3)" onclick="confirmDeleteJob()">🗑 Delete</button>
@@ -1289,7 +1289,15 @@ function renderJobDetail(id) {
   document.getElementById('jd-client').textContent = c?c.name:'Unknown';
   document.getElementById('jd-service').textContent = j.service;
   document.getElementById('jd-vehicle').textContent = vehStr(j)||'—';
-  document.getElementById('jd-price').textContent = fmt(j.price);
+  var jeItems = jeLoad(j.id);
+  var jeTotal = jeItems.reduce(function(s,i){ return s+(parseFloat(i.cost)||0); }, 0);
+  var combinedTotal = (j.price||0) + jeTotal;
+  var priceEl = document.getElementById('jd-price');
+  if (jeTotal > 0) {
+    priceEl.innerHTML = fmt(j.price) + ' <span style="color:var(--muted);font-size:.8rem">+ $'+jeTotal.toFixed(2)+' expenses</span> <strong style="color:var(--green)">= '+fmt(combinedTotal)+'</strong>';
+  } else {
+    priceEl.textContent = fmt(j.price);
+  }
   document.getElementById('jd-status-wrap').innerHTML = '<span class="badge '+statusBadge(j.status)+'">'+j.status+'</span>';
   document.getElementById('jd-date').textContent = (j.date||'—')+(j.time?' @ '+tFmt(j.time):'');
   document.getElementById('jd-notes').textContent = j.notes||'—';
@@ -2229,10 +2237,10 @@ function renderJobExpenses(jobId) {
     + '<div class="section-title">🧾 Job Expenses</div>'
     + rowsHtml
     + (items.length ? '<div class="je-total"><span>Total</span><span>$'+total.toFixed(2)+'</span></div>' : '')
-    + '<div class="je-add-row">'
-    + '<input class="je-inp" id="je-desc-inp" type="text" placeholder="Item description...">'
-    + '<input class="je-inp je-inp-cost" id="je-cost-inp" type="number" placeholder="$0" min="0" step="0.01">'
-    + '<button class="je-add-btn" onclick="jeAdd('+jobId+')">+ Add</button>'
+    + '<div class="je-add-row" style="display:grid;grid-template-columns:1fr 70px auto;gap:6px;margin-top:10px">'
+    + '<input class="je-inp" id="je-desc-inp" type="text" placeholder="Description...">'
+    + '<input class="je-inp" id="je-cost-inp" type="number" placeholder="$0" min="0" step="0.01" style="width:100%">'
+    + '<button class="je-add-btn" onclick="jeAdd('+jobId+')">Add</button>'
     + '</div>'
     + '</div>';
 }
@@ -2248,6 +2256,7 @@ function jeAdd(jobId) {
   jeSave(jobId, items);
   descEl.value = ''; costEl.value = '';
   renderJobExpenses(jobId);
+  renderJobDetail(jobId);
   showToast('✓ Item added');
 }
 
@@ -2256,6 +2265,7 @@ function jeDelete(jobId, idx) {
   items.splice(idx, 1);
   jeSave(jobId, items);
   renderJobExpenses(jobId);
+  renderJobDetail(jobId);
   showToast('✓ Item removed');
 }
 
