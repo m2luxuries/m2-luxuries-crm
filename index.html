@@ -776,7 +776,12 @@ function loadCache() {
 }
 
 function mapClient(r) { return { id:r.id, name:r.name||'', vehicle:r.vehicle||'', phone:r.phone||'', email:r.email||'', notes:r.notes||'' }; }
-function mapJob(r)    { return { id:r.id, clientId:r.client_id, service:r.service||'', price:parseFloat(r.price)||0, status:r.status||'Lead', date:r.date||'', time:r.appointment_time||'', notes:r.notes||'', year:r.vehicle_year||'', make:r.vehicle_make||'', model:r.vehicle_model||'', photos:[] }; }
+function mapJob(r) {
+  // Migrate old 'Follow Up' status to 'Returning'
+  var status = r.status || 'Lead';
+  if (status === 'Follow Up') status = 'Returning';
+  return { id:r.id, clientId:r.client_id, service:r.service||'', price:parseFloat(r.price)||0, status:status, date:r.date||'', time:r.appointment_time||'', notes:r.notes||'', year:r.vehicle_year||'', make:r.vehicle_make||'', model:r.vehicle_model||'', photos:[] };
+}
 function mapExpense(r){ return { id:r.id, name:r.name||'', cat:r.cat||'Other', amount:parseFloat(r.amount)||0, date:r.date||'', notes:r.notes||'' }; }
 function mapComm(r)   { return { id:r.id, clientId:r.client_id, type:r.type||'note', body:r.body||'', ts:r.ts||'', jobId:r.job_id||0 }; }
 
@@ -834,6 +839,12 @@ async function fullSync() {
     saveCache();
     setSyncStatus('online', 'Synced '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));
     refreshAll();
+
+    // One-time migration: fix old 'Follow Up' status in Supabase → 'Returning'
+    var oldFollowUps = jRows.filter(function(r){ return r.status === 'Follow Up'; });
+    for (var fu of oldFollowUps) {
+      try { await sbPatch('jobs', fu.id, { status: 'Returning' }); console.log('Migrated job', fu.id, 'Follow Up → Returning'); } catch(e) {}
+    }
   } catch(e) {
     console.error('Sync failed:', e);
     setSyncStatus('offline', 'Sync failed — local data safe');
