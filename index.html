@@ -304,7 +304,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     </div>
   </div>
   <div class="card"><div class="section-title">Upcoming Schedule</div><div id="d-upcoming"></div></div>
-  <div class="card"><div class="section-title">Top Clients by Value</div><div id="d-top-clients"></div></div>
+
 </div>
 
 <!-- CLIENTS -->
@@ -438,7 +438,13 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="stat-card"><div class="stat-label">Pipeline Value</div><div class="stat-value" id="d-pipe">$0</div><div class="stat-sub">Active jobs</div></div>
   </div>
   <div class="card"><div class="section-title">Revenue by Service</div><div id="r-by-service"></div></div>
-  <div class="card"><div class="section-title">Top Clients</div><div id="r-top-clients"></div></div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div class="section-title" style="margin-bottom:0">Top Clients</div>
+      <button id="r-clients-toggle-btn" onclick="toggleAllClients()" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-family:var(--font);font-size:.72rem;padding:4px 10px;border-radius:8px;cursor:pointer">View All</button>
+    </div>
+    <div id="r-top-clients"></div>
+  </div>
   <div class="card"><div class="section-title">Completed Jobs</div><div id="r-completed-jobs"></div></div>
 </div>
 
@@ -953,12 +959,7 @@ function renderDashboard() {
     ? upcoming.map(function(j){ var c=getClientById(j.clientId); return jobRowHtml(j,c); }).join('')
     : emptyState('📅','No upcoming appointments');
 
-  var topClients = clients.map(function(c){
-    return { c:c, total:jobs.filter(function(j){ return j.clientId===c.id&&j.status==='Complete'; }).reduce(function(s,j){ return s+j.price; },0), cnt:jobs.filter(function(j){ return j.clientId===c.id; }).length };
-  }).filter(function(x){ return x.total>0; }).sort(function(a,b){ return b.total-a.total; }).slice(0,5);
-  document.getElementById('d-top-clients').innerHTML = topClients.length
-    ? topClients.map(function(x){ return '<div class="list-row" onclick="viewClient('+x.c.id+')"><div class="avatar">'+initials(x.c.name)+'</div><div class="row-info"><div class="row-name">'+x.c.name+'</div><div class="row-sub">'+(x.c.vehicle||'No vehicle')+' · '+x.cnt+' job'+(x.cnt!==1?'s':'')+'</div></div><div class="row-right"><div class="row-value">'+fmt(x.total)+'</div></div></div>'; }).join('')
-    : emptyState('👥','No clients yet');
+
 }
 
 function jobRowHtml(j, c) {
@@ -1659,7 +1660,34 @@ function getReportDates() {
   return { from:document.getElementById('range-from').value, to:document.getElementById('range-to').value, label:'Custom range' };
 }
 function inRange(d,from,to) { if(!d) return false; return (!from||d>=from)&&(!to||d<=to); }
+
+function renderClientList(showAll) {
+  var list = window._rAllClients || [];
+  var shown = showAll ? list : list.slice(0, 5);
+  var btn = document.getElementById('r-clients-toggle-btn');
+  if (btn) btn.textContent = showAll ? 'Show Top 5' : 'View All (' + list.length + ')';
+
+  document.getElementById('r-top-clients').innerHTML = shown.length
+    ? shown.map(function(x, i) {
+        return '<div class="list-row" onclick="viewClient('+x.c.id+')" style="cursor:pointer">'
+          + '<div class="avatar" style="font-size:.7rem;font-weight:700;min-width:28px;height:28px;border-radius:50%;background:var(--blue-dim);display:flex;align-items:center;justify-content:center">'+(i+1)+'</div>'
+          + '<div class="row-info">'
+          + '<div class="row-name">'+x.c.name+'</div>'
+          + '<div class="row-sub">'+(x.veh||'No vehicle')+' · '+x.cnt+' job'+(x.cnt!==1?'s':'')+'</div>'
+          + '</div>'
+          + '<div class="row-right"><div class="row-value">'+fmt(x.total)+'</div></div>'
+          + '</div>';
+      }).join('')
+    : emptyState('👥', 'No completed jobs in this period');
+}
+
+function toggleAllClients() {
+  window._rShowAll = !window._rShowAll;
+  renderClientList(window._rShowAll);
+}
+
 function renderReports() {
+  window._rShowAll = false;
   var rd = getReportDates(); document.getElementById('range-label').textContent=rd.label;
   var doneJobs = jobs.filter(function(j){ return j.status==='Complete'&&inRange(j.date,rd.from,rd.to); });
   var periodExp = expenses.filter(function(e){ return inRange(e.date,rd.from,rd.to); });
@@ -1679,10 +1707,20 @@ function renderReports() {
   var bySvc={};doneJobs.forEach(function(j){bySvc[j.service]=(bySvc[j.service]||0)+j.price;});
   barSection(Object.entries(bySvc).sort(function(a,b){return b[1]-a[1];}), rev, 'r-by-service');
 
-  var topC = clients.map(function(c){ return [c.name, doneJobs.filter(function(j){return j.clientId===c.id;}).reduce(function(s,j){return s+j.price;},0)]; }).filter(function(x){return x[1]>0;}).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
-  document.getElementById('r-top-clients').innerHTML = topC.length
-    ? topC.map(function(x){ return '<div class="sum-row"><span>'+x[0]+'</span><span style="font-weight:600">'+fmt(x[1])+'</span></div>'; }).join('')
-    : emptyState('👥','No completed jobs in this period');
+  // Build full client list for this period
+  var allPeriodClients = clients.map(function(c){
+    var cJobs = doneJobs.filter(function(j){ return j.clientId===c.id; });
+    if (!cJobs.length) return null;
+    var total = cJobs.reduce(function(s,j){ return s+j.price; }, 0);
+    var veh = c.vehicle || (cJobs[0].vehicleMake ? (cJobs[0].vehicleYear||'')+' '+(cJobs[0].vehicleMake||'')+' '+(cJobs[0].vehicleModel||'') : '');
+    return { c:c, total:total, cnt:cJobs.length, veh:veh.trim() };
+  }).filter(Boolean).sort(function(a,b){ return b.total-a.total; });
+
+  // Store for toggle
+  window._rAllClients = allPeriodClients;
+  window._rShowAll = window._rShowAll || false;
+
+  renderClientList(window._rShowAll);
 
   document.getElementById('r-completed-jobs').innerHTML = doneJobs.length
     ? doneJobs.slice().reverse().map(function(j){ var c=getClientById(j.clientId); return '<div class="job-row" onclick="viewJob('+j.id+')"><div class="job-info"><div class="job-name">'+(c?c.name:'Unknown')+'</div><div class="job-meta">'+j.service+' · '+(j.date||'')+'</div></div><div class="job-right"><div class="job-price">'+fmt(j.price)+'</div></div></div>'; }).join('')
