@@ -862,6 +862,7 @@ function showPage(name) {
   var nav = document.getElementById('nav-'+name);
   if (nav) nav.classList.add('active');
   currentPage = name;
+  window.scrollTo(0, 0);
   if (name==='dashboard') renderDashboard();
   if (name==='clients')   renderClients();
   if (name==='jobs')      renderJobs();
@@ -974,7 +975,7 @@ function renderDashboard() {
         + '<div class="section-title">🔧 In Progress — ' + inProgressJobs.length + ' Job' + (inProgressJobs.length!==1?'s':'') + '</div>'
         + inProgressJobs.map(function(j){
             var c = getClientById(j.clientId);
-            return '<div style="background:rgba(255,152,0,.06);border-radius:10px;margin-bottom:4px">'
+            return '<div style="margin-bottom:4px">'
               + jobRowHtml(j, c)
               + '</div>';
           }).join('')
