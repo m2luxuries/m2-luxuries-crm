@@ -82,6 +82,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 .status-tile{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
 .status-tile-num{font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1}
 .status-tile-lbl{font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--muted);text-transform:uppercase;text-align:center}
+.status-tile.tile-active{background:var(--surface3,#2a2a2a);border-color:var(--text);}
 .status-tile.lead .status-tile-num{color:var(--blue)}
 .status-tile.quoted .status-tile-num{color:var(--yellow)}
 .status-tile.booked .status-tile-num{color:#ccc}
@@ -292,7 +293,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="status-tile complete" onclick="showPage('pipeline');filterPipeline('Complete')"    style="flex-direction:column;align-items:center;justify-content:center;padding:12px 6px;gap:4px"><div class="status-tile-num" id="sb-done"    style="color:var(--green)">0</div><div class="status-tile-lbl" style="color:var(--green);font-size:.62rem;text-align:center">Done</div></div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
-    <div class="status-tile" style="background:rgba(255,193,7,.12);border-color:rgba(255,193,7,.3);flex-direction:row;align-items:center;justify-content:space-between;padding:12px 16px" onclick="showPage('pipeline');filterPipeline('Returning')"><div class="status-tile-lbl" style="color:#FFC107;font-size:.72rem">Returning</div><div class="status-tile-num" id="sb-followup" style="color:#FFC107">0</div></div>
+    <div class="status-tile" style="flex-direction:row;align-items:center;justify-content:space-between;padding:12px 16px" onclick="showPage('pipeline');filterPipeline('Returning')"><div class="status-tile-lbl" style="color:#FFC107;font-size:.72rem">Returning</div><div class="status-tile-num" id="sb-followup" style="color:#FFC107">0</div></div>
     <div class="status-tile" style="background:rgba(100,116,139,.12);border-color:rgba(100,116,139,.3);flex-direction:row;align-items:center;justify-content:space-between;padding:12px 16px" onclick="showPage('pipeline');filterPipeline('Cold')"><div class="status-tile-lbl" style="color:#94a3b8;font-size:.72rem">Cold</div><div class="status-tile-num" id="sb-cold" style="color:#94a3b8">0</div></div>
   </div>
 
@@ -407,7 +408,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="status-tile quoted"   onclick="filterPipeline('Quoted')"><div class="status-tile-num" id="pt-quoted">0</div><div class="status-tile-lbl">Quoted</div></div>
     <div class="status-tile booked"   onclick="filterPipeline('Booked')"><div class="status-tile-num" id="pt-booked">0</div><div class="status-tile-lbl">Booked</div></div>
     <div class="status-tile progress" onclick="filterPipeline('In Progress')"><div class="status-tile-num" id="pt-prog">0</div><div class="status-tile-lbl">In Prog</div></div>
-    <div class="status-tile" style="background:rgba(255,193,7,.12);border-color:rgba(255,193,7,.3)" onclick="filterPipeline('Returning')"><div class="status-tile-num" id="pt-followup" style="color:#FFC107">0</div><div class="status-tile-lbl" style="color:#FFC107">Returning</div></div>
+    <div class="status-tile returning-tile" onclick="filterPipeline('Returning')"><div class="status-tile-num" id="pt-followup" style="color:#FFC107">0</div><div class="status-tile-lbl" style="color:#FFC107">Returning</div></div>
     <div class="status-tile complete" onclick="filterPipeline('Complete')"><div class="status-tile-num" id="pt-done">0</div><div class="status-tile-lbl">Done</div></div>
   </div>
   <div class="card"><div id="pipeline-content"></div></div>
@@ -1505,6 +1506,13 @@ function deletePhoto(idx) {
 var pipelineFilter = null;
 function filterPipeline(status) {
   pipelineFilter = pipelineFilter===status ? null : status;
+  // Highlight active tile
+  document.querySelectorAll('.status-grid .status-tile').forEach(function(t){ t.classList.remove('tile-active'); });
+  if (pipelineFilter) {
+    var tileMap = { Lead:'pt-lead', Quoted:'pt-quoted', Booked:'pt-booked', 'In Progress':'pt-prog', Complete:'pt-done', Returning:'pt-followup', Cold:'pt-cold' };
+    var elId = tileMap[pipelineFilter];
+    if (elId) { var el = document.getElementById(elId); if (el && el.closest('.status-tile')) el.closest('.status-tile').classList.add('tile-active'); }
+  }
   renderPipeline();
 }
 function renderPipeline() {
@@ -2157,35 +2165,64 @@ initAuth();
 
 
 // ── AUTO-MOVE BOOKED → IN PROGRESS ────────────────────────────────────
+// Service durations in hours — update here when adding new packages
+var SERVICE_DURATIONS = {
+  'M2 Refresh':           2,
+  'M2 Signature':         5,
+  'M2 Elite':             8,
+  'Complimentary Consult':1,
+  'Spot Paint Repair':    2,
+  'Paint Correction':     6,
+  'Ceramic Coating':      8,
+  'PPF':                  6,
+  'Other':                2
+};
+
 async function autoMoveToInProgress() {
   var now = new Date();
   var todayStr = today();
   var currentHour = now.getHours();
   var currentMin  = now.getMinutes();
+  var currentMins = currentHour * 60 + currentMin;
 
-  var toMove = jobs.filter(function(j){
+  // ── Move Booked → In Progress when start time arrives ────────────────
+  var toStart = jobs.filter(function(j){
     if (j.status !== 'Booked' || j.date !== todayStr) return false;
     if (!j.time) return false;
     var parts = j.time.split(':');
-    var jHr = parseInt(parts[0]);
-    var jMin = parseInt(parts[1] || '0');
-    // Move if appointment time has arrived
-    return (currentHour > jHr) || (currentHour === jHr && currentMin >= jMin);
+    var jMins = parseInt(parts[0]) * 60 + parseInt(parts[1] || '0');
+    return currentMins >= jMins;
   });
 
-  if (!toMove.length) return;
-
-  for (var i = 0; i < toMove.length; i++) {
-    var j = toMove[i];
+  for (var i = 0; i < toStart.length; i++) {
+    var j = toStart[i];
     j.status = 'In Progress';
     try { await sbPatch('jobs', j.id, { status: 'In Progress' }); } catch(e) {}
   }
+  if (toStart.length) showToast('🔧 ' + toStart.length + ' job' + (toStart.length!==1?'s':'') + ' started');
 
-  if (toMove.length) {
+  // ── Move In Progress → Complete when end time arrives ────────────────
+  var toDone = jobs.filter(function(j){
+    if (j.status !== 'In Progress' || j.date !== todayStr) return false;
+    if (!j.time) return false;
+    var parts  = j.time.split(':');
+    var startMins = parseInt(parts[0]) * 60 + parseInt(parts[1] || '0');
+    var dur = SERVICE_DURATIONS[j.service] || 2;
+    var endMins = startMins + (dur * 60);
+    return currentMins >= endMins;
+  });
+
+  for (var k = 0; k < toDone.length; k++) {
+    var jd = toDone[k];
+    jd.status = 'Complete';
+    try { await sbPatch('jobs', jd.id, { status: 'Complete' }); } catch(e) {}
+  }
+  if (toDone.length) showToast('✅ ' + toDone.length + ' job' + (toDone.length!==1?'s':'') + ' completed');
+
+  if (toStart.length || toDone.length) {
     saveCache();
     renderDashboard();
     renderPipeline();
-    showToast('🔧 ' + toMove.length + ' job' + (toMove.length!==1?'s':'') + ' moved to In Progress');
   }
 }
 
