@@ -270,29 +270,16 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
   <div class="auth-card">
     <div class="auth-logo">M2<span> CRM</span></div>
     <div class="auth-sub">Las Colinas · Irving TX</div>
-    <div class="auth-title" style="margin-bottom:8px">Enter PIN</div>
-    <div class="auth-desc">Enter your 4-digit PIN to access the CRM.</div>
-    <div style="display:flex;gap:10px;justify-content:center;margin-bottom:20px" id="pin-dots">
-      <div style="width:14px;height:14px;border-radius:50%;background:#2e2e2e;border:2px solid #444;transition:background .15s" id="pd-0"></div>
-      <div style="width:14px;height:14px;border-radius:50%;background:#2e2e2e;border:2px solid #444;transition:background .15s" id="pd-1"></div>
-      <div style="width:14px;height:14px;border-radius:50%;background:#2e2e2e;border:2px solid #444;transition:background .15s" id="pd-2"></div>
-      <div style="width:14px;height:14px;border-radius:50%;background:#2e2e2e;border:2px solid #444;transition:background .15s" id="pd-3"></div>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:240px;margin:0 auto 12px">
-      <button class="pin-key" onclick="pinKey('1')">1</button>
-      <button class="pin-key" onclick="pinKey('2')">2</button>
-      <button class="pin-key" onclick="pinKey('3')">3</button>
-      <button class="pin-key" onclick="pinKey('4')">4</button>
-      <button class="pin-key" onclick="pinKey('5')">5</button>
-      <button class="pin-key" onclick="pinKey('6')">6</button>
-      <button class="pin-key" onclick="pinKey('7')">7</button>
-      <button class="pin-key" onclick="pinKey('8')">8</button>
-      <button class="pin-key" onclick="pinKey('9')">9</button>
-      <button class="pin-key" onclick="pinClear()" style="color:#666;font-size:18px">⌫</button>
-      <button class="pin-key" onclick="pinKey('0')">0</button>
-      <button class="pin-key" onclick="pinSubmit()" style="background:#CCDA46;color:#000;">✓</button>
-    </div>
-    <div class="auth-error" id="auth-error"></div>
+    <div class="auth-title" style="margin-bottom:12px">Enter PIN to continue</div>
+    <input id="pin-input" type="password" inputmode="numeric" maxlength="4" placeholder="••••"
+      style="width:100%;text-align:center;font-size:28px;letter-spacing:12px;padding:14px;background:#1a1a1a;border:1px solid #3a3a3a;border-radius:12px;color:#f0f0f0;outline:none;margin-bottom:14px;font-family:'DM Sans',sans-serif;"
+      oninput="if(this.value.length===4)pinSubmit(this.value)"
+      onkeydown="if(event.key==='Enter')pinSubmit(this.value)">
+    <button onclick="pinSubmit(document.getElementById('pin-input').value)"
+      style="width:100%;padding:14px;background:#CCDA46;color:#000;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:8px;">
+      Unlock CRM
+    </button>
+    <div id="auth-error" style="color:#e05555;font-size:13px;margin-top:8px;display:none;"></div>
   </div>
 </div>
 
@@ -1725,44 +1712,43 @@ window.addEventListener('load',function(){setTimeout(function(){gcInitClient();g
 // ═══════════════════════════════════════════
 var CORRECT_PIN = '2025'; // ← Change this to your PIN
 var AUTH_SESSION_KEY = 'm2crm_auth_v1';
-var pinEntry = '';
 
-function authHideScreen(){var screen=document.getElementById('auth-screen');if(screen)screen.classList.add('hidden');}
-function authCheckSession(){try{var sess=JSON.parse(localStorage.getItem(AUTH_SESSION_KEY)||'null');if(sess&&sess.expiry>Date.now())return true;}catch(e){}return false;}
-function authSaveSession(){localStorage.setItem(AUTH_SESSION_KEY,JSON.stringify({expiry:Date.now()+(7*24*60*60*1000)}));}
-function authShowError(msg){var el=document.getElementById('auth-error');if(el){el.textContent=msg;el.style.display='block';setTimeout(function(){el.style.display='none';},2000);}}
-
-function pinKey(digit){
-  if(pinEntry.length>=4) return;
-  pinEntry+=digit;
-  updatePinDots();
-  if(pinEntry.length===4) setTimeout(pinSubmit,120);
+function authHideScreen(){
+  var screen=document.getElementById('auth-screen');
+  if(screen) screen.classList.add('hidden');
 }
-function pinClear(){
-  pinEntry=pinEntry.slice(0,-1);
-  updatePinDots();
+function authCheckSession(){
+  try{
+    var sess=JSON.parse(localStorage.getItem(AUTH_SESSION_KEY)||'null');
+    if(sess&&sess.expiry>Date.now()) return true;
+  }catch(e){}
+  return false;
 }
-function updatePinDots(){
-  for(var i=0;i<4;i++){
-    var dot=document.getElementById('pd-'+i);
-    if(dot) dot.style.background=i<pinEntry.length?'#CCDA46':'#2e2e2e';
-  }
+function authSaveSession(){
+  localStorage.setItem(AUTH_SESSION_KEY,JSON.stringify({expiry:Date.now()+(7*24*60*60*1000)}));
 }
-function pinSubmit(){
-  if(pinEntry===CORRECT_PIN){
+function pinSubmit(val){
+  var pin=(val||'').trim();
+  if(pin===CORRECT_PIN){
     authSaveSession();
     authHideScreen();
-    pinEntry='';
-    updatePinDots();
+    var inp=document.getElementById('pin-input');
+    if(inp) inp.value='';
   }else{
-    authShowError('Incorrect PIN — try again');
-    pinEntry='';
-    updatePinDots();
+    var err=document.getElementById('auth-error');
+    if(err){err.textContent='Incorrect PIN — try again';err.style.display='block';}
+    var inp=document.getElementById('pin-input');
+    if(inp){inp.value='';inp.focus();}
+    setTimeout(function(){if(err)err.style.display='none';},2000);
   }
 }
-
-async function initAuth(){
+function initAuth(){
   if(authCheckSession()){authHideScreen();return;}
+  // Auto-focus PIN input on load
+  setTimeout(function(){
+    var inp=document.getElementById('pin-input');
+    if(inp) inp.focus();
+  },400);
 }
 initAuth();
 
