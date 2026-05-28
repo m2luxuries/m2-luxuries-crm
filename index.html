@@ -265,23 +265,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
   </div>
 </header>
 
-<!-- AUTH SCREEN — PIN -->
-<div id="auth-screen">
-  <div class="auth-card">
-    <div class="auth-logo">M2<span> CRM</span></div>
-    <div class="auth-sub">Las Colinas · Irving TX</div>
-    <div class="auth-title" style="margin-bottom:12px">Enter PIN to continue</div>
-    <input id="pin-input" type="password" inputmode="numeric" maxlength="4" placeholder="••••"
-      style="width:100%;text-align:center;font-size:28px;letter-spacing:12px;padding:14px;background:#1a1a1a;border:1px solid #3a3a3a;border-radius:12px;color:#f0f0f0;outline:none;margin-bottom:14px;font-family:'DM Sans',sans-serif;"
-      oninput="if(this.value.length===4)pinSubmit(this.value)"
-      onkeydown="if(event.key==='Enter')pinSubmit(this.value)">
-    <button onclick="pinSubmit(document.getElementById('pin-input').value)"
-      style="width:100%;padding:14px;background:#CCDA46;color:#000;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:8px;">
-      Unlock CRM
-    </button>
-    <div id="auth-error" style="color:#e05555;font-size:13px;margin-top:8px;display:none;"></div>
-  </div>
-</div>
+
 
 <!-- DASHBOARD -->
 <div class="page active" id="page-dashboard">
@@ -1707,50 +1691,7 @@ function gcUpdateUI(){var statusEl=document.getElementById('gc-status-text');var
 async function gcCreateContact(client){try{var res=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:client.name||'',phone:client.phone||'',email:client.email||'',vehicle:client.vehicle||'',notes:client.notes||''})});var data=await res.json();if(data.success){console.log('✅ Google Contact created:',client.name);}else{console.warn('Google Contact failed:',data.error);}}catch(e){console.warn('Google Contacts error (non-blocking):',e);}}
 window.addEventListener('load',function(){setTimeout(function(){gcInitClient();gcUpdateUI();},1200);});
 
-// ═══════════════════════════════════════════
-// AUTHENTICATION — PIN
-// ═══════════════════════════════════════════
-var CORRECT_PIN = '2025'; // ← Change this to your PIN
-var AUTH_SESSION_KEY = 'm2crm_auth_v1';
-
-function authHideScreen(){
-  var screen=document.getElementById('auth-screen');
-  if(screen) screen.classList.add('hidden');
-}
-function authCheckSession(){
-  try{
-    var sess=JSON.parse(localStorage.getItem(AUTH_SESSION_KEY)||'null');
-    if(sess&&sess.expiry>Date.now()) return true;
-  }catch(e){}
-  return false;
-}
-function authSaveSession(){
-  localStorage.setItem(AUTH_SESSION_KEY,JSON.stringify({expiry:Date.now()+(7*24*60*60*1000)}));
-}
-function pinSubmit(val){
-  var pin=(val||'').trim();
-  if(pin===CORRECT_PIN){
-    authSaveSession();
-    authHideScreen();
-    var inp=document.getElementById('pin-input');
-    if(inp) inp.value='';
-  }else{
-    var err=document.getElementById('auth-error');
-    if(err){err.textContent='Incorrect PIN — try again';err.style.display='block';}
-    var inp=document.getElementById('pin-input');
-    if(inp){inp.value='';inp.focus();}
-    setTimeout(function(){if(err)err.style.display='none';},2000);
-  }
-}
-function initAuth(){
-  if(authCheckSession()){authHideScreen();return;}
-  // Auto-focus PIN input on load
-  setTimeout(function(){
-    var inp=document.getElementById('pin-input');
-    if(inp) inp.focus();
-  },400);
-}
-initAuth();
+// No auth — open access
 
 // ═══════════════════════════════════════════
 // AUTO-MOVE BOOKED → IN PROGRESS
