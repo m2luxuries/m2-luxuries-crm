@@ -283,26 +283,24 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 
 <div class="page active" id="page-dashboard">
 
-  <div id="d-today-wrap" style="margin-bottom:10px"></div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start">
-    <div style="display:flex;flex-direction:column;gap:6px">
-      <div class="status-tile lead"     onclick="showPage('pipeline');filterPipeline('Lead')"     style="flex-direction:row;justify-content:space-between;padding:10px 14px"><div class="status-tile-lbl" style="color:var(--blue)">Lead</div><div class="status-tile-num" id="sb-lead" style="color:var(--blue)">0</div></div>
-      <div class="status-tile quoted"   onclick="showPage('pipeline');filterPipeline('Quoted')"   style="flex-direction:row;justify-content:space-between;padding:10px 14px"><div class="status-tile-lbl" style="color:var(--yellow)">Quoted</div><div class="status-tile-num" id="sb-quoted" style="color:var(--yellow)">0</div></div>
-      <div class="status-tile booked"   onclick="showPage('pipeline');filterPipeline('Booked')"   style="flex-direction:row;justify-content:space-between;padding:10px 14px"><div class="status-tile-lbl" style="color:#ccc">Booked</div><div class="status-tile-num" id="sb-booked" style="color:#ccc">0</div></div>
-      <div class="status-tile progress" onclick="showPage('pipeline');filterPipeline('In Progress')" style="flex-direction:row;justify-content:space-between;padding:10px 14px"><div class="status-tile-lbl" style="color:var(--orange)">In Progress</div><div class="status-tile-num" id="sb-prog" style="color:var(--orange)">0</div></div>
-      <div class="status-tile complete" onclick="showPage('pipeline');filterPipeline('Complete')" style="flex-direction:row;justify-content:space-between;padding:10px 14px"><div class="status-tile-lbl" style="color:var(--green)">Done</div><div class="status-tile-num" id="sb-done" style="color:var(--green)">0</div></div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:6px">
-      <div class="status-tile" style="background:rgba(255,193,7,.12);border-color:rgba(255,193,7,.3);align-items:center;justify-content:center;gap:4px;padding:12px 10px" onclick="showPage('pipeline');filterPipeline('Returning')">
-        <div class="status-tile-num" id="sb-followup" style="color:#FFC107;font-size:26px">0</div>
-        <div class="status-tile-lbl" style="color:#FFC107;text-align:center">Returning</div>
-      </div>
-      <div class="status-tile" style="background:rgba(100,116,139,.12);border-color:rgba(100,116,139,.3);align-items:center;justify-content:center;gap:4px;padding:12px 10px" onclick="showPage('pipeline');filterPipeline('Cold')">
-        <div class="status-tile-num" id="sb-cold" style="color:#94a3b8;font-size:26px">0</div>
-        <div class="status-tile-lbl" style="color:#94a3b8;text-align:center">Cold</div>
-      </div>
-    </div>
+  <!-- PIPELINE TILES — top, full width, 7 tiles in a row -->
+  <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:10px">
+    <div class="status-tile lead"     onclick="showPage('pipeline');filterPipeline('Lead')"        style="flex-direction:column;align-items:center;justify-content:center;padding:12px 6px;gap:4px"><div class="status-tile-num" id="sb-lead"    style="color:var(--blue)">0</div><div class="status-tile-lbl" style="color:var(--blue);font-size:.62rem;text-align:center">Lead</div></div>
+    <div class="status-tile quoted"   onclick="showPage('pipeline');filterPipeline('Quoted')"      style="flex-direction:column;align-items:center;justify-content:center;padding:12px 6px;gap:4px"><div class="status-tile-num" id="sb-quoted"  style="color:var(--yellow)">0</div><div class="status-tile-lbl" style="color:var(--yellow);font-size:.62rem;text-align:center">Quoted</div></div>
+    <div class="status-tile booked"   onclick="showPage('pipeline');filterPipeline('Booked')"      style="flex-direction:column;align-items:center;justify-content:center;padding:12px 6px;gap:4px"><div class="status-tile-num" id="sb-booked"  style="color:#ccc">0</div><div class="status-tile-lbl" style="color:#ccc;font-size:.62rem;text-align:center">Booked</div></div>
+    <div class="status-tile progress" onclick="showPage('pipeline');filterPipeline('In Progress')" style="flex-direction:column;align-items:center;justify-content:center;padding:12px 6px;gap:4px"><div class="status-tile-num" id="sb-prog"    style="color:var(--orange)">0</div><div class="status-tile-lbl" style="color:var(--orange);font-size:.62rem;text-align:center">In Prog</div></div>
+    <div class="status-tile complete" onclick="showPage('pipeline');filterPipeline('Complete')"    style="flex-direction:column;align-items:center;justify-content:center;padding:12px 6px;gap:4px"><div class="status-tile-num" id="sb-done"    style="color:var(--green)">0</div><div class="status-tile-lbl" style="color:var(--green);font-size:.62rem;text-align:center">Done</div></div>
+    <div class="status-tile" style="background:rgba(255,193,7,.12);border-color:rgba(255,193,7,.3);flex-direction:column;align-items:center;justify-content:center;padding:12px 6px;gap:4px" onclick="showPage('pipeline');filterPipeline('Returning')"><div class="status-tile-num" id="sb-followup" style="color:#FFC107">0</div><div class="status-tile-lbl" style="color:#FFC107;font-size:.62rem;text-align:center">Return</div></div>
+    <div class="status-tile" style="background:rgba(100,116,139,.12);border-color:rgba(100,116,139,.3);flex-direction:column;align-items:center;justify-content:center;padding:12px 6px;gap:4px" onclick="showPage('pipeline');filterPipeline('Cold')"><div class="status-tile-num" id="sb-cold" style="color:#94a3b8">0</div><div class="status-tile-lbl" style="color:#94a3b8;font-size:.62rem;text-align:center">Cold</div></div>
   </div>
+
+  <!-- TODAY'S APPOINTMENTS -->
+  <div id="d-today-wrap" style="margin-bottom:10px"></div>
+
+  <!-- IN PROGRESS -->
+  <div id="d-inprogress-wrap" style="margin-bottom:10px"></div>
+
+  <!-- UPCOMING BOOKED (future only) -->
   <div class="card"><div class="section-title">Upcoming Schedule</div><div id="d-upcoming"></div></div>
 
 </div>
@@ -953,7 +951,32 @@ function renderDashboard() {
   if(document.getElementById('sb-followup')) document.getElementById('sb-followup').textContent = counts['Returning'];
   if(document.getElementById('pt-followup')) document.getElementById('pt-followup').textContent = counts['Returning'];
 
-  var upcoming = jobs.filter(function(j){ return j.status==='Booked'||j.status==='In Progress'; })
+  // ── IN PROGRESS ─────────────────────────────────────────────────────
+  var inProgressJobs = jobs.filter(function(j){ return j.status==='In Progress'; })
+    .sort(function(a,b){ return (a.date+a.time).localeCompare(b.date+b.time); });
+  var ipWrap = document.getElementById('d-inprogress-wrap');
+  if (ipWrap) {
+    if (inProgressJobs.length) {
+      ipWrap.innerHTML = '<div class="card" style="margin-bottom:0">'
+        + '<div class="section-title">🔧 In Progress — ' + inProgressJobs.length + ' Job' + (inProgressJobs.length!==1?'s':'') + '</div>'
+        + inProgressJobs.map(function(j){
+            var c = getClientById(j.clientId);
+            return '<div class="list-row" onclick="viewJob('+j.id+')" style="background:rgba(255,152,0,.05);border-radius:10px;margin-bottom:4px">'
+              + '<div class="avatar" style="background:rgba(255,152,0,.2)">'+initials(c?c.name:'?')+'</div>'
+              + '<div class="row-info"><div class="row-name">'+(c?c.name:'Unknown')+'</div>'
+              + '<div class="row-sub">'+j.service+(c&&c.phone?' · '+c.phone:'')+'</div></div>'
+              + '<span class="badge badge-progress">In Progress</span>'
+              + '</div>';
+          }).join('')
+        + '</div>';
+    } else {
+      ipWrap.innerHTML = '';
+    }
+  }
+
+  // ── UPCOMING — future Booked only (not today, not In Progress) ───────
+  var todayStr2 = today();
+  var upcoming = jobs.filter(function(j){ return j.status==='Booked' && j.date > todayStr2; })
     .sort(function(a,b){ return (a.date+a.time).localeCompare(b.date+b.time); }).slice(0,10);
   document.getElementById('d-upcoming').innerHTML = upcoming.length
     ? upcoming.map(function(j){ var c=getClientById(j.clientId); return jobRowHtml(j,c); }).join('')
