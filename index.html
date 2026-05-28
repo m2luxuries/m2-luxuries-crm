@@ -974,11 +974,8 @@ function renderDashboard() {
         + '<div class="section-title">🔧 In Progress — ' + inProgressJobs.length + ' Job' + (inProgressJobs.length!==1?'s':'') + '</div>'
         + inProgressJobs.map(function(j){
             var c = getClientById(j.clientId);
-            return '<div class="list-row" onclick="viewJob('+j.id+')" style="padding:10px 12px;margin-bottom:4px;border-radius:10px;background:rgba(255,152,0,.05)">'
-              + '<div class="avatar" style="background:rgba(255,152,0,.2);flex-shrink:0">'+initials(c?c.name:'?')+'</div>'
-              + '<div class="row-info" style="min-width:0;flex:1"><div class="row-name">'+(c?c.name:'Unknown')+'</div>'
-              + '<div class="row-sub">'+j.service+(c&&c.phone?' · '+c.phone:'')+'</div></div>'
-              + '<span class="badge badge-progress" style="flex-shrink:0;margin-left:8px">In Progress</span>'
+            return '<div style="background:rgba(255,152,0,.06);border-radius:10px;margin-bottom:4px">'
+              + jobRowHtml(j, c)
               + '</div>';
           }).join('')
         + '</div>';
