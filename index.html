@@ -236,6 +236,20 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 .auth-error{color:#e05555;font-size:.78rem;margin-top:.8rem;display:none}
 .auth-divider{display:flex;align-items:center;gap:.8rem;margin:.8rem 0;color:#444;font-size:.72rem}
 .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:#2e2e2e}
+
+.je-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+.je-row:last-of-type{border-bottom:none}
+.je-desc{flex:1;font-size:.87rem;color:var(--text)}
+.je-cost{font-size:.87rem;font-weight:600;color:var(--text);min-width:54px;text-align:right}
+.je-del{background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer;padding:0 4px;line-height:1}
+.je-del:hover{color:var(--red)}
+.je-total{display:flex;justify-content:space-between;padding:10px 0 2px;font-weight:700;font-size:.9rem;border-top:1.5px solid var(--border);margin-top:4px}
+.je-add-row{display:flex;gap:6px;margin-top:10px}
+.je-inp{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:.82rem;padding:8px 10px;border-radius:8px;outline:none;flex:1}
+.je-inp:focus{border-color:var(--muted)}
+.je-inp-cost{width:80px;flex:none}
+.je-add-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:.82rem;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.je-add-btn:hover{background:var(--surface3)}
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -390,6 +404,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <input type="file" id="photo-input" accept="image/*" multiple style="display:none">
   </div>
   <div id="jd-convert-wrap"></div>
+  <div id="jd-job-expenses-wrap"></div>
   <div id="jd-followup-wrap"></div>
   <div style="display:flex;gap:8px;margin-top:4px">
     <button class="hbtn" style="flex:1;padding:12px" onclick="editJob()">✏️ Edit</button>
@@ -965,6 +980,8 @@ function renderDashboard() {
   document.getElementById('sb-done').textContent = counts.Complete;
   if(document.getElementById('sb-followup')) document.getElementById('sb-followup').textContent = counts['Returning'];
   if(document.getElementById('pt-followup')) document.getElementById('pt-followup').textContent = counts['Returning'];
+  if(document.getElementById('sb-cold')) document.getElementById('sb-cold').textContent = counts['Cold']||0;
+  if(document.getElementById('pt-cold')) document.getElementById('pt-cold').textContent = counts['Cold']||0;
 
   // ── IN PROGRESS ─────────────────────────────────────────────────────
   var inProgressJobs = jobs.filter(function(j){ return j.status==='In Progress'; })
@@ -1280,6 +1297,7 @@ function renderJobDetail(id) {
   document.getElementById('jd-convert-wrap').innerHTML = j.status==='Lead'
     ? '<button class="convert-btn" onclick="openConvertModal()">⚡ Convert This Lead</button>' : '';
   // Show follow-up scheduler on Complete jobs
+  renderJobExpenses(id);
   var fuWrap = document.getElementById('jd-followup-wrap');
   if (j.status === 'Complete') {
     fuWrap.innerHTML = '<div class="card" style="margin-top:0"><div class="section-title">🔁 Schedule Follow-Up</div>'
@@ -2177,6 +2195,69 @@ var SERVICE_DURATIONS = {
   'PPF':                  6,
   'Other':                2
 };
+
+
+// ═══════════════════════════════════════════
+// JOB EXPENSES
+// ═══════════════════════════════════════════
+// Job expenses stored in localStorage keyed by job ID
+function jeKey(jobId) { return 'je_' + jobId; }
+
+function jeLoad(jobId) {
+  try { return JSON.parse(localStorage.getItem(jeKey(jobId)) || '[]'); } catch(e) { return []; }
+}
+
+function jeSave(jobId, items) {
+  localStorage.setItem(jeKey(jobId), JSON.stringify(items));
+}
+
+function renderJobExpenses(jobId) {
+  var wrap = document.getElementById('jd-job-expenses-wrap');
+  if (!wrap) return;
+  var items = jeLoad(jobId);
+  var total = items.reduce(function(s, i){ return s + (parseFloat(i.cost)||0); }, 0);
+
+  var rowsHtml = items.length ? items.map(function(item, idx){
+    return '<div class="je-row">'
+      + '<div class="je-desc">'+item.desc+'</div>'
+      + '<div class="je-cost">$'+parseFloat(item.cost).toFixed(2)+'</div>'
+      + '<button class="je-del" onclick="jeDelete('+jobId+','+idx+')">✕</button>'
+      + '</div>';
+  }).join('') : '<div style="font-size:.8rem;color:var(--muted);padding:6px 0">No items yet — add below.</div>';
+
+  wrap.innerHTML = '<div class="card">'
+    + '<div class="section-title">🧾 Job Expenses</div>'
+    + rowsHtml
+    + (items.length ? '<div class="je-total"><span>Total</span><span>$'+total.toFixed(2)+'</span></div>' : '')
+    + '<div class="je-add-row">'
+    + '<input class="je-inp" id="je-desc-inp" type="text" placeholder="Item description...">'
+    + '<input class="je-inp je-inp-cost" id="je-cost-inp" type="number" placeholder="$0" min="0" step="0.01">'
+    + '<button class="je-add-btn" onclick="jeAdd('+jobId+')">+ Add</button>'
+    + '</div>'
+    + '</div>';
+}
+
+function jeAdd(jobId) {
+  var descEl = document.getElementById('je-desc-inp');
+  var costEl = document.getElementById('je-cost-inp');
+  var desc = descEl.value.trim();
+  var cost = parseFloat(costEl.value);
+  if (!desc || isNaN(cost) || cost <= 0) { showToast('⚠️ Enter item and cost'); return; }
+  var items = jeLoad(jobId);
+  items.push({ desc: desc, cost: cost });
+  jeSave(jobId, items);
+  descEl.value = ''; costEl.value = '';
+  renderJobExpenses(jobId);
+  showToast('✓ Item added');
+}
+
+function jeDelete(jobId, idx) {
+  var items = jeLoad(jobId);
+  items.splice(idx, 1);
+  jeSave(jobId, items);
+  renderJobExpenses(jobId);
+  showToast('✓ Item removed');
+}
 
 async function autoMoveToInProgress() {
   var now = new Date();
