@@ -809,10 +809,10 @@ async function fullSync() {
       } catch(e) { console.warn('Could not push job to cloud', e); }
     }
 
-    // Pull all cloud data (paginated)
+    // Pull all cloud data (paginated) — cloud is always authoritative
     var [cRows, jRows, eRows, cmRows] = await Promise.all([ sbFetch('clients'), sbFetch('jobs'), sbFetch('expenses'), sbFetch('comms') ]);
 
-    // Merge: cloud is authoritative for real IDs. Only keep local records with temp IDs (never synced yet).
+    // Cloud wins — replace everything with cloud data, keep only truly unsynced local records
     var cloudClientIds = new Set(cRows.map(function(r){ return r.id; }));
     var unsavedClients = clients.filter(function(c){ return !cloudClientIds.has(c.id) && c.id > 9999999999999; });
     clients = cRows.map(mapClient).concat(unsavedClients);
@@ -2375,6 +2375,11 @@ async function boot() {
 
 boot();
 setInterval(autoMoveToInProgress, 60000); // Check every minute
+
+// Auto-sync when tab regains focus (switching between phone/laptop)
+document.addEventListener('visibilitychange', function() {
+  if (!document.hidden) { fullSync(); }
+});
 </script>
 </body>
 </html>
