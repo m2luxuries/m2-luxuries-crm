@@ -283,15 +283,17 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 
 <div class="page active" id="page-dashboard">
 
-  <!-- PIPELINE TILES — top, full width, 7 tiles in a row -->
-  <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:10px">
+  <!-- PIPELINE TILES — 5 on top, Return + Cold wide below -->
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:6px">
     <div class="status-tile lead"     onclick="showPage('pipeline');filterPipeline('Lead')"        style="flex-direction:column;align-items:center;justify-content:center;padding:12px 6px;gap:4px"><div class="status-tile-num" id="sb-lead"    style="color:var(--blue)">0</div><div class="status-tile-lbl" style="color:var(--blue);font-size:.62rem;text-align:center">Lead</div></div>
     <div class="status-tile quoted"   onclick="showPage('pipeline');filterPipeline('Quoted')"      style="flex-direction:column;align-items:center;justify-content:center;padding:12px 6px;gap:4px"><div class="status-tile-num" id="sb-quoted"  style="color:var(--yellow)">0</div><div class="status-tile-lbl" style="color:var(--yellow);font-size:.62rem;text-align:center">Quoted</div></div>
     <div class="status-tile booked"   onclick="showPage('pipeline');filterPipeline('Booked')"      style="flex-direction:column;align-items:center;justify-content:center;padding:12px 6px;gap:4px"><div class="status-tile-num" id="sb-booked"  style="color:#ccc">0</div><div class="status-tile-lbl" style="color:#ccc;font-size:.62rem;text-align:center">Booked</div></div>
     <div class="status-tile progress" onclick="showPage('pipeline');filterPipeline('In Progress')" style="flex-direction:column;align-items:center;justify-content:center;padding:12px 6px;gap:4px"><div class="status-tile-num" id="sb-prog"    style="color:var(--orange)">0</div><div class="status-tile-lbl" style="color:var(--orange);font-size:.62rem;text-align:center">In Prog</div></div>
     <div class="status-tile complete" onclick="showPage('pipeline');filterPipeline('Complete')"    style="flex-direction:column;align-items:center;justify-content:center;padding:12px 6px;gap:4px"><div class="status-tile-num" id="sb-done"    style="color:var(--green)">0</div><div class="status-tile-lbl" style="color:var(--green);font-size:.62rem;text-align:center">Done</div></div>
-    <div class="status-tile" style="background:rgba(255,193,7,.12);border-color:rgba(255,193,7,.3);flex-direction:column;align-items:center;justify-content:center;padding:12px 6px;gap:4px" onclick="showPage('pipeline');filterPipeline('Returning')"><div class="status-tile-num" id="sb-followup" style="color:#FFC107">0</div><div class="status-tile-lbl" style="color:#FFC107;font-size:.62rem;text-align:center">Return</div></div>
-    <div class="status-tile" style="background:rgba(100,116,139,.12);border-color:rgba(100,116,139,.3);flex-direction:column;align-items:center;justify-content:center;padding:12px 6px;gap:4px" onclick="showPage('pipeline');filterPipeline('Cold')"><div class="status-tile-num" id="sb-cold" style="color:#94a3b8">0</div><div class="status-tile-lbl" style="color:#94a3b8;font-size:.62rem;text-align:center">Cold</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+    <div class="status-tile" style="background:rgba(255,193,7,.12);border-color:rgba(255,193,7,.3);flex-direction:row;align-items:center;justify-content:space-between;padding:12px 16px" onclick="showPage('pipeline');filterPipeline('Returning')"><div class="status-tile-lbl" style="color:#FFC107;font-size:.72rem">Returning</div><div class="status-tile-num" id="sb-followup" style="color:#FFC107">0</div></div>
+    <div class="status-tile" style="background:rgba(100,116,139,.12);border-color:rgba(100,116,139,.3);flex-direction:row;align-items:center;justify-content:space-between;padding:12px 16px" onclick="showPage('pipeline');filterPipeline('Cold')"><div class="status-tile-lbl" style="color:#94a3b8;font-size:.72rem">Cold</div><div class="status-tile-num" id="sb-cold" style="color:#94a3b8">0</div></div>
   </div>
 
   <!-- TODAY'S APPOINTMENTS -->
@@ -708,6 +710,17 @@ async function sbFetch(table) {
   return all;
 }
 
+async function sbPatch(table, id, data) {
+  var r = await fetch(SUPA_URL+'/rest/v1/'+table+'?id=eq.'+id, {
+    method: 'PATCH',
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+    body: JSON.stringify(data)
+  });
+  if (!r.ok) throw new Error(await r.text());
+  var rows = await r.json();
+  return rows[0];
+}
+
 async function sbInsert(table, data) {
   var r = await fetch(SUPA_URL+'/rest/v1/'+table, { method:'POST', headers:sbH(), body:JSON.stringify(data), cache:'no-store' });
   if (!r.ok) throw new Error(table+' insert failed ('+r.status+'): '+await r.text());
@@ -925,11 +938,11 @@ function renderDashboard() {
               var parts = j.time.split(':'); var h=parseInt(parts[0]); var m=parts[1];
               var ap=h>=12?'PM':'AM'; h=h%12||12; return h+':'+m+' '+ap;
             })() : '';
-            return '<div class="list-row" onclick="viewJob('+j.id+')" style="background:rgba(255,255,255,.03);border-radius:10px;margin-bottom:4px">'
-              + '<div class="avatar" style="background:var(--blue-dim)">'+initials(c?c.name:'?')+'</div>'
-              + '<div class="row-info"><div class="row-name">'+(c?c.name:'Unknown')+'</div>'
+            return '<div class="list-row" onclick="viewJob('+j.id+')" style="padding:10px 12px;margin-bottom:4px;border-radius:10px">'
+              + '<div class="avatar" style="background:var(--blue-dim);flex-shrink:0">'+initials(c?c.name:'?')+'</div>'
+              + '<div class="row-info" style="min-width:0;flex:1"><div class="row-name">'+(c?c.name:'Unknown')+'</div>'
               + '<div class="row-sub">'+j.service+(timeStr?' · '+timeStr:'')+(c&&c.phone?' · '+c.phone:'')+'</div></div>'
-              + '<span class="badge '+statusBadge(j.status)+'">'+j.status+'</span>'
+              + '<span class="badge '+statusBadge(j.status)+'" style="flex-shrink:0;margin-left:8px">'+j.status+'</span>'
               + '</div>';
           }).join('')
         + '</div>';
@@ -961,11 +974,11 @@ function renderDashboard() {
         + '<div class="section-title">🔧 In Progress — ' + inProgressJobs.length + ' Job' + (inProgressJobs.length!==1?'s':'') + '</div>'
         + inProgressJobs.map(function(j){
             var c = getClientById(j.clientId);
-            return '<div class="list-row" onclick="viewJob('+j.id+')" style="background:rgba(255,152,0,.05);border-radius:10px;margin-bottom:4px">'
-              + '<div class="avatar" style="background:rgba(255,152,0,.2)">'+initials(c?c.name:'?')+'</div>'
-              + '<div class="row-info"><div class="row-name">'+(c?c.name:'Unknown')+'</div>'
+            return '<div class="list-row" onclick="viewJob('+j.id+')" style="padding:10px 12px;margin-bottom:4px;border-radius:10px;background:rgba(255,152,0,.05)">'
+              + '<div class="avatar" style="background:rgba(255,152,0,.2);flex-shrink:0">'+initials(c?c.name:'?')+'</div>'
+              + '<div class="row-info" style="min-width:0;flex:1"><div class="row-name">'+(c?c.name:'Unknown')+'</div>'
               + '<div class="row-sub">'+j.service+(c&&c.phone?' · '+c.phone:'')+'</div></div>'
-              + '<span class="badge badge-progress">In Progress</span>'
+              + '<span class="badge badge-progress" style="flex-shrink:0;margin-left:8px">In Progress</span>'
               + '</div>';
           }).join('')
         + '</div>';
@@ -2146,6 +2159,40 @@ async function initAuth() {
 
 initAuth();
 
+
+// ── AUTO-MOVE BOOKED → IN PROGRESS ────────────────────────────────────
+async function autoMoveToInProgress() {
+  var now = new Date();
+  var todayStr = today();
+  var currentHour = now.getHours();
+  var currentMin  = now.getMinutes();
+
+  var toMove = jobs.filter(function(j){
+    if (j.status !== 'Booked' || j.date !== todayStr) return false;
+    if (!j.time) return false;
+    var parts = j.time.split(':');
+    var jHr = parseInt(parts[0]);
+    var jMin = parseInt(parts[1] || '0');
+    // Move if appointment time has arrived
+    return (currentHour > jHr) || (currentHour === jHr && currentMin >= jMin);
+  });
+
+  if (!toMove.length) return;
+
+  for (var i = 0; i < toMove.length; i++) {
+    var j = toMove[i];
+    j.status = 'In Progress';
+    try { await sbPatch('jobs', j.id, { status: 'In Progress' }); } catch(e) {}
+  }
+
+  if (toMove.length) {
+    saveCache();
+    renderDashboard();
+    renderPipeline();
+    showToast('🔧 ' + toMove.length + ' job' + (toMove.length!==1?'s':'') + ' moved to In Progress');
+  }
+}
+
 async function boot() {
   document.getElementById('loading-msg').textContent='Loading saved data...';
   loadCache();
@@ -2155,9 +2202,11 @@ async function boot() {
   document.getElementById('loading-msg').textContent='Syncing with cloud...';
   await fullSync();
   document.getElementById('loading').style.display='none';
+  autoMoveToInProgress(); // Check on load
 }
 
 boot();
+setInterval(autoMoveToInProgress, 60000); // Check every minute
 </script>
 </body>
 </html>
