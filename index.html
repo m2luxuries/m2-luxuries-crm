@@ -1309,7 +1309,10 @@ function renderJobDetail(id) {
   document.getElementById('jd-notes').textContent = j.notes||'—';
   renderJobPhotos(j);
   document.getElementById('jd-convert-wrap').innerHTML = j.status==='Lead'
-    ? '<button class="convert-btn" onclick="openConvertModal()">⚡ Convert This Lead</button>' : '';
+    ? '<button class="convert-btn" onclick="openConvertModal()">⚡ Convert This Lead</button>'
+    : (j.status==='In Progress' || j.status==='Complete')
+    ? '<button class="convert-btn" style="background:var(--green);color:#fff;border-color:var(--green)" onclick="sendPickupNotification('+id+')">📲 Notify Client — Car is Ready</button>'
+    : '';
   // Show follow-up scheduler on Complete jobs
   renderJobExpenses(id);
   var fuWrap = document.getElementById('jd-followup-wrap');
@@ -2274,6 +2277,41 @@ function jeDelete(jobId, idx) {
   renderJobDetail(jobId);
   showToast('✓ Item removed');
 }
+
+async function sendPickupNotification(jobId) {
+  var j = jobs.find(function(x){ return x.id===jobId; }); if (!j) return;
+  var c = getClientById(j.clientId); if (!c) return;
+
+  if (!c.email) { showToast('⚠️ No email on file for this client'); return; }
+
+  var btn = document.querySelector('[onclick="sendPickupNotification('+jobId+')"]');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending...'; }
+
+  try {
+    var res = await fetch('https://m2-luxuries.mali-a7f.workers.dev', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        action:      'pickup_ready',
+        clientName:  c.name,
+        clientEmail: c.email,
+        service:     j.service,
+        vehicle:     vehStr(j) || 'your vehicle'
+      })
+    });
+    var data = await res.json();
+    if (data.success) {
+      showToast('✅ Pickup notification sent to ' + c.name);
+      if (btn) { btn.textContent = '✅ Notification Sent'; }
+    } else {
+      throw new Error(data.error || 'Failed');
+    }
+  } catch(e) {
+    showToast('⚠️ Failed to send — ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = '📲 Notify Client — Car is Ready'; }
+  }
+}
+
 
 async function autoMoveToInProgress() {
   var now = new Date();
