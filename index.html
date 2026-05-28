@@ -811,6 +811,8 @@ async function fullSync() {
 
     // Pull all cloud data (paginated) — cloud is always authoritative
     var [cRows, jRows, eRows, cmRows] = await Promise.all([ sbFetch('clients'), sbFetch('jobs'), sbFetch('expenses'), sbFetch('comms') ]);
+    console.log('Supabase sync — clients:', cRows.length, 'jobs:', jRows.length);
+    console.log('Job statuses from Supabase:', jRows.map(function(j){ return j.status; }));
 
     // Cloud wins — replace everything with cloud data, keep only truly unsynced local records
     var cloudClientIds = new Set(cRows.map(function(r){ return r.id; }));
