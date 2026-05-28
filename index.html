@@ -1014,11 +1014,14 @@ function renderDashboard() {
 
 function jobRowHtml(j, c) {
   var v = vehStr(j);
+  var jeItems = jeLoad(j.id);
+  var jeTotal = jeItems.reduce(function(s,i){ return s+(parseFloat(i.cost)||0); }, 0);
+  var displayPrice = fmt((j.price||0) + jeTotal);
   return '<div class="job-row" onclick="viewJob('+j.id+')">'
     +'<div class="job-info"><div class="job-name">'+(c?c.name:'Unknown')+'</div>'
     +'<div class="job-meta">'+(v?v+' · ':'')+j.service+'</div>'
     +'<div class="job-meta">'+(j.date||'')+(j.time?' · 🕒 '+tFmt(j.time):'')+'</div></div>'
-    +'<div class="job-right"><div class="job-price">'+fmt(j.price)+'</div><span class="badge '+statusBadge(j.status)+'">'+j.status+'</span></div></div>';
+    +'<div class="job-right"><div class="job-price">'+displayPrice+'</div><span class="badge '+statusBadge(j.status)+'">'+j.status+'</span></div></div>';
 }
 
 
