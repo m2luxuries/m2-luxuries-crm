@@ -1376,6 +1376,18 @@ function openAddJob() {
   document.getElementById('mj-client-search').value=''; document.getElementById('mj-client-id').value='';
   document.getElementById('mj-service').value=''; document.getElementById('mj-price').value='';
   document.getElementById('mj-status').value='Lead'; document.getElementById('mj-date').value=today();
+
+  // Auto-update status when date/time are filled in
+  function mjAutoStatus() {
+    var date = document.getElementById('mj-date').value;
+    var time = document.getElementById('mj-time').value;
+    var status = document.getElementById('mj-status');
+    if (date && time && status.value === 'Lead') {
+      status.value = 'Booked';
+    }
+  }
+  document.getElementById('mj-date').onchange = mjAutoStatus;
+  document.getElementById('mj-time').onchange = mjAutoStatus;
   document.getElementById('mj-time').value=''; document.getElementById('mj-notes').value='';
   populateYears('mj-year'); populateMakes('mj-make');
   document.getElementById('mj-year').value=''; document.getElementById('mj-make').value='';
