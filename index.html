@@ -884,7 +884,10 @@ function setSyncStatus(state, msg) {
 function initials(n) { return n.trim().split(' ').filter(Boolean).map(function(w){return w[0];}).join('').toUpperCase().slice(0,2)||'?'; }
 function statusBadge(s) { return ({Complete:'badge-complete',Lead:'badge-lead',Quoted:'badge-quoted',Booked:'badge-booked','In Progress':'badge-progress','Returning':'badge-followup',Cold:'badge-cold'})[s]||'badge-progress'; }
 function fmt(n) { var v=parseFloat(String(n||0).replace(/[^0-9.\-]/g,''))||0; return '$'+v.toFixed(2).replace(/\.00$/,'').replace(/\B(?=(\d{3})+(?!\d))/g,','); }
-function today() { return new Date().toISOString().slice(0,10); }
+function today() {
+  var d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
 function tsNow() { return new Date().toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}); }
 function getClientById(id) { return clients.find(function(c){ return c.id===id; }); }
 function genId() { return Date.now() + Math.floor(Math.random()*1000); }
