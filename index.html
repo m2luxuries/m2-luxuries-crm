@@ -356,6 +356,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="detail-section"><div class="detail-label">Vehicle</div><div class="detail-value" id="cd-vehicle">—</div></div>
     <div class="detail-section"><div class="detail-label">Phone</div><div class="detail-value" id="cd-phone">—</div></div>
     <div class="detail-section"><div class="detail-label">Email</div><div class="detail-value" id="cd-email">—</div></div>
+    <div class="detail-section"><div class="detail-label">Source</div><div class="detail-value" id="cd-source" style="color:var(--muted)">Not recorded</div></div>
     <div class="detail-section"><div class="detail-label">Notes</div><div class="detail-value" id="cd-notes">—</div></div>
   </div>
   <div class="card"><div class="section-title">Jobs</div><div id="cd-jobs"></div></div>
@@ -457,6 +458,11 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="stat-card"><div class="stat-label">Pipeline Value</div><div class="stat-value" id="d-pipe">$0</div><div class="stat-sub">Active jobs</div></div>
   </div>
   <div class="card"><div class="section-title">Revenue by Service</div><div id="r-by-service"></div></div>
+  <div class="card">
+    <div class="section-title">📣 Referral Sources</div>
+    <div id="r-referrals"></div>
+  </div>
+
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
       <div class="section-title" style="margin-bottom:0">Top Clients</div>
@@ -775,7 +781,12 @@ function loadCache() {
   } catch(e) {}
 }
 
-function mapClient(r) { return { id:r.id, name:r.name||'', vehicle:r.vehicle||'', phone:r.phone||'', email:r.email||'', notes:r.notes||'' }; }
+function mapClient(r) {
+  var notes = r.notes || '';
+  var srcMatch = notes.match(/Source:\s*([^|]+)/);
+  var source = srcMatch ? srcMatch[1].trim() : '';
+  return { id:r.id, name:r.name||'', vehicle:r.vehicle||'', phone:r.phone||'', email:r.email||'', notes:notes, source:source };
+}
 function mapJob(r) {
   // Migrate old 'Follow Up' status to 'Returning'
   var status = r.status || 'Lead';
@@ -1195,6 +1206,8 @@ function renderClientDetail(id) {
   document.getElementById('cd-phone').textContent = c.phone||'—';
   document.getElementById('cd-email').textContent = c.email||'—';
   document.getElementById('cd-notes').textContent = c.notes||'—';
+  var cdSrc = document.getElementById('cd-source');
+  if (cdSrc) { cdSrc.textContent = c.source || 'Not recorded'; cdSrc.style.color = c.source ? 'var(--text)' : 'var(--muted)'; }
 
   var cjobs = jobs.filter(function(j){ return j.clientId===id; });
   document.getElementById('cd-jobs').innerHTML = cjobs.length
@@ -1840,6 +1853,32 @@ function renderReports() {
   }
   var bySvc={};doneJobs.forEach(function(j){bySvc[j.service]=(bySvc[j.service]||0)+j.price;});
   barSection(Object.entries(bySvc).sort(function(a,b){return b[1]-a[1];}), rev, 'r-by-service');
+
+
+  // ── REFERRAL REPORT ──────────────────────────────────────────────────
+  var refMap = {};
+  // Only count clients who booked in this period
+  var periodClientIds = new Set(doneJobs.map(function(j){ return j.clientId; }));
+  clients.forEach(function(c){
+    if (!periodClientIds.has(c.id) && rd.start) return; // filter by period if date range set
+    var src = c.source || 'Unknown';
+    // Extract referrer name if friend/family
+    var key = src;
+    if (src.indexOf('referred by') > -1) {
+      var refName = src.replace('Friend / Family — referred by ', '').trim();
+      key = refName || 'Friend / Family';
+    }
+    refMap[key] = (refMap[key] || 0) + 1;
+  });
+  var refSorted = Object.keys(refMap).sort(function(a,b){ return refMap[b]-refMap[a]; });
+  var refEl = document.getElementById('r-referrals');
+  if (refEl) {
+    refEl.innerHTML = refSorted.length
+      ? refSorted.map(function(k){
+          return '<div class="sum-row" style="cursor:default"><span>'+k+'</span><span style="font-weight:700;color:var(--text)">'+refMap[k]+' client'+(refMap[k]!==1?'s':'')+'</span></div>';
+        }).join('')
+      : '<div style="font-size:.8rem;color:var(--muted);padding:8px 0">No referral data yet</div>';
+  }
 
   // Build full client list for this period
   var allPeriodClients = clients.map(function(c){
