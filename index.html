@@ -2485,11 +2485,15 @@ async function autoMoveToInProgress() {
   if (toStart.length) showToast('🔧 ' + toStart.length + ' job' + (toStart.length!==1?'s':'') + ' started');
 
   // ── Move In Progress → Complete when end time arrives ────────────────
+  // DISABLED: Auto-complete caused issues when jobs run over time.
+  // Jobs must be manually moved to Complete by Moe.
+  // Auto-start (Booked → In Progress) still works fine.
+
+  /*
   var manualOverrides = JSON.parse(localStorage.getItem('m2_manual_status') || '{}');
   var toDone = jobs.filter(function(j){
     if (j.status !== 'In Progress' || j.date !== todayStr) return false;
     if (j._manualBooked) return false;
-    // Check persistent localStorage override
     var ov = manualOverrides[j.id];
     if (ov && ov.status === 'In Progress' && ov.date === todayStr) return false;
     if (!j.time) return false;
@@ -2506,6 +2510,7 @@ async function autoMoveToInProgress() {
     try { await sbPatch('jobs', jd.id, { status: 'Complete' }); } catch(e) {}
   }
   if (toDone.length) showToast('✅ ' + toDone.length + ' job' + (toDone.length!==1?'s':'') + ' completed');
+  */
 
   if (toStart.length || toDone.length) {
     saveCache();
