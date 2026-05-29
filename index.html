@@ -996,9 +996,12 @@ function renderDashboard() {
               var ap=h>=12?'PM':'AM'; h=h%12||12; return h+':'+m+' '+ap;
             })() : '';
             return '<div class="list-row" onclick="viewJob('+j.id+')" style="padding:10px 12px;margin-bottom:4px;border-radius:10px">'
-              + '<div class="avatar" style="background:var(--blue-dim);flex-shrink:0">'+initials(c?c.name:'?')+'</div>'
-              + '<div class="row-info" style="min-width:0;flex:1"><div class="row-name">'+(c?c.name:'Unknown')+'</div>'
-              + '<div class="row-sub">'+j.service+(timeStr?' · '+timeStr:'')+(c&&c.phone?' · '+c.phone:'')+'</div></div>'
+              + '<div class="row-info" style="min-width:0;flex:1">'
+              + '<div class="row-name">'+(c?c.name:'Unknown')+'</div>'
+              + '<div class="row-sub">'+(vehStr(j)||'No vehicle')+'</div>'
+              + '<div class="row-sub">'+j.service+'</div>'
+              + (timeStr ? '<div class="row-sub" style="color:#FFC107;font-weight:600">🕒 '+timeStr+'</div>' : '')
+              + '</div>'
               + '<span class="badge '+statusBadge(j.status)+'" style="flex-shrink:0;margin-left:8px">'+j.status+'</span>'
               + '</div>';
           }).join('')
@@ -1057,11 +1060,16 @@ function jobRowHtml(j, c) {
   var jeItems = jeGetCached(j.id);
   var jeTotal = jeItems.reduce(function(s,i){ return s+(parseFloat(i.cost)||0); }, 0);
   var displayPrice = fmt((j.price||0) + jeTotal);
+  var dateTime = (j.date||'') + (j.time ? ' · 🕒 ' + tFmt(j.time) : '');
   return '<div class="job-row" onclick="viewJob('+j.id+')">'
-    +'<div class="job-info"><div class="job-name">'+(c?c.name:'Unknown')+'</div>'
-    +'<div class="job-meta">'+(v?v+' · ':'')+j.service+'</div>'
-    +'<div class="job-meta">'+(j.date||'')+(j.time?' · 🕒 '+tFmt(j.time):'')+'</div></div>'
-    +'<div class="job-right"><div class="job-price">'+displayPrice+'</div><span class="badge '+statusBadge(j.status)+'">'+j.status+'</span></div></div>';
+    +'<div class="job-info">'
+    +'<div class="job-name">'+(c?c.name:'Unknown')+'</div>'
+    +'<div class="job-meta">'+(v||'No vehicle')+'</div>'
+    +'<div class="job-meta">'+j.service+'</div>'
+    +(dateTime ? '<div class="job-meta" style="color:#FFC107;font-weight:600">'+dateTime+'</div>' : '')
+    +'</div>'
+    +'<div class="job-right"><div class="job-price">'+displayPrice+'</div><span class="badge '+statusBadge(j.status)+'">'+j.status+'</span></div>'
+    +'</div>';
 }
 
 
