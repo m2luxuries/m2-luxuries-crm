@@ -1572,8 +1572,10 @@ function changeJobStatus() {
 async function setJobStatus(s) {
   var j = jobs.find(function(x){ return x.id===viewingJobId; }); if (!j) return;
   j.status = s;
-  if (s === 'Booked') j._manualBooked = true; // prevent auto-complete from overriding
-  if (s !== 'Booked') delete j._manualBooked;
+  if (s === 'Booked') j._manualBooked = true;
+  else delete j._manualBooked;
+  if (s === 'In Progress') j._manualInProgress = true; // prevent auto-complete
+  else delete j._manualInProgress;
   saveCache(); closeModal('modal-status'); renderJobDetail(viewingJobId); renderDashboard(); showToast('✓ Status → '+s);
   if (s==='Complete') {
     var c = getClientById(j.clientId);
@@ -2472,10 +2474,11 @@ async function autoMoveToInProgress() {
   if (toStart.length) showToast('🔧 ' + toStart.length + ' job' + (toStart.length!==1?'s':'') + ' started');
 
   // ── Move In Progress → Complete when end time arrives ────────────────
-  // Only auto-complete if the job was NOT manually set to Booked in this session
+  // Only auto-complete if the job was NOT manually set to In Progress this session
   var toDone = jobs.filter(function(j){
     if (j.status !== 'In Progress' || j.date !== todayStr) return false;
-    if (j._manualBooked) return false; // skip if manually set to Booked recently
+    if (j._manualBooked) return false;
+    if (j._manualInProgress) return false; // skip if manually kept in progress
     if (!j.time) return false;
     var parts  = j.time.split(':');
     var startMins = parseInt(parts[0]) * 60 + parseInt(parts[1] || '0');
