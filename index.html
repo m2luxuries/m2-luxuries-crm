@@ -397,6 +397,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="detail-section"><div class="detail-label">Status</div><div id="jd-status-wrap"></div></div>
     <div class="detail-section"><div class="detail-label">Date</div><div class="detail-value" id="jd-date">—</div></div>
     <div class="detail-section"><div class="detail-label">Notes</div><div class="detail-value" id="jd-notes">—</div></div>
+    <div class="detail-section" id="jd-addons-wrap" style="display:none"><div class="detail-label" style="color:#FFC107">Add-Ons Requested</div><div class="detail-value" id="jd-addons" style="color:#FFC107">—</div></div>
   </div>
   <div id="jd-convert-wrap"></div>
   <div id="jd-job-expenses-wrap"></div>
@@ -567,7 +568,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div class="field"><label>Service *</label>
       <select id="mj-service">
         <option value="">Select service...</option>
-        <option>M2 Refresh</option><option>M2 Signature</option><option>M2 Elite</option>
+        <option>Hand Wash</option><option>Interior Package</option><option>M2 Refresh</option><option>M2 Signature</option><option>M2 Elite</option>
         <option>PPF</option><option>Wrap</option><option>Ceramic</option>
         <option>Paint Correction</option><option>Spot Paint Repair</option><option>Other</option>
       </select>
@@ -654,7 +655,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
       <div class="field"><label>Service *</label>
         <select id="nl-service">
           <option value="">Select service...</option>
-          <option>M2 Refresh</option><option>M2 Signature</option><option>M2 Elite</option>
+          <option>Hand Wash</option><option>Interior Package</option><option>M2 Refresh</option><option>M2 Signature</option><option>M2 Elite</option>
           <option>PPF</option><option>Wrap</option><option>Ceramic</option>
           <option>Paint Correction</option><option>Spot Paint Repair</option><option>Other</option>
         </select>
@@ -1364,7 +1365,28 @@ function renderJobDetail(id) {
   }
   document.getElementById('jd-status-wrap').innerHTML = '<span class="badge '+statusBadge(j.status)+'">'+j.status+'</span>';
   document.getElementById('jd-date').textContent = (j.date||'—')+(j.time?' @ '+tFmt(j.time):'');
-  document.getElementById('jd-notes').textContent = j.notes||'—';
+  // Parse add-ons from notes and show as separate field
+  var notesText = j.notes || '';
+  var addonsMatch = notesText.match(/Add-ons?:\s*([^|]+)/i);
+  var addonsEl = document.getElementById('jd-addons-wrap');
+  if (addonsMatch && addonsEl) {
+    addonsEl.style.display = 'block';
+    document.getElementById('jd-addons').textContent = addonsMatch[1].trim();
+  } else if (addonsEl) {
+    addonsEl.style.display = 'none';
+  }
+  // Clean notes display — remove the structured prefix info
+  var cleanNotes = notesText
+    .replace(/DEPOSIT PENDING — [^|]+\|?/i, '')
+    .replace(/⏳ DEPOSIT PENDING — [^|]+\|?/i, '')
+    .replace(/Website (booking|à la carte booking) — [^|]+\|?/i, '')
+    .replace(/Service: [^|]+\|?/i, '')
+    .replace(/Size: [^|]+\|?/i, '')
+    .replace(/Add-ons?: [^|]+\|?/i, '')
+    .replace(/\|/g, '')
+    .replace(/Notes:\s*/i, '')
+    .trim();
+  document.getElementById('jd-notes').textContent = cleanNotes || '—';
   renderJobPhotos(j);
   document.getElementById('jd-convert-wrap').innerHTML = j.status==='Lead'
     ? '<button class="convert-btn" onclick="openConvertModal()">⚡ Convert This Lead</button>'
@@ -2313,6 +2335,8 @@ initAuth();
 // ── AUTO-MOVE BOOKED → IN PROGRESS ────────────────────────────────────
 // Service durations in hours — update here when adding new packages
 var SERVICE_DURATIONS = {
+  'Hand Wash':            1,
+  'Interior Package':     2,
   'M2 Refresh':           2,
   'M2 Signature':         5,
   'M2 Elite':             8,
