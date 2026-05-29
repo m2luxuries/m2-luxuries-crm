@@ -1574,8 +1574,19 @@ async function setJobStatus(s) {
   j.status = s;
   if (s === 'Booked') j._manualBooked = true;
   else delete j._manualBooked;
-  if (s === 'In Progress') j._manualInProgress = true; // prevent auto-complete
-  else delete j._manualInProgress;
+  if (s === 'In Progress') {
+    j._manualInProgress = true;
+    // Persist manual override in localStorage so it survives page refresh
+    var overrides = JSON.parse(localStorage.getItem('m2_manual_status') || '{}');
+    overrides[j.id] = { status: 'In Progress', date: today() };
+    localStorage.setItem('m2_manual_status', JSON.stringify(overrides));
+  } else {
+    delete j._manualInProgress;
+    // Clear override when manually moved to something else
+    var overrides = JSON.parse(localStorage.getItem('m2_manual_status') || '{}');
+    delete overrides[j.id];
+    localStorage.setItem('m2_manual_status', JSON.stringify(overrides));
+  }
   saveCache(); closeModal('modal-status'); renderJobDetail(viewingJobId); renderDashboard(); showToast('✓ Status → '+s);
   if (s==='Complete') {
     var c = getClientById(j.clientId);
@@ -2474,11 +2485,13 @@ async function autoMoveToInProgress() {
   if (toStart.length) showToast('🔧 ' + toStart.length + ' job' + (toStart.length!==1?'s':'') + ' started');
 
   // ── Move In Progress → Complete when end time arrives ────────────────
-  // Only auto-complete if the job was NOT manually set to In Progress this session
+  var manualOverrides = JSON.parse(localStorage.getItem('m2_manual_status') || '{}');
   var toDone = jobs.filter(function(j){
     if (j.status !== 'In Progress' || j.date !== todayStr) return false;
     if (j._manualBooked) return false;
-    if (j._manualInProgress) return false; // skip if manually kept in progress
+    // Check persistent localStorage override
+    var ov = manualOverrides[j.id];
+    if (ov && ov.status === 'In Progress' && ov.date === todayStr) return false;
     if (!j.time) return false;
     var parts  = j.time.split(':');
     var startMins = parseInt(parts[0]) * 60 + parseInt(parts[1] || '0');
@@ -2501,9 +2514,28 @@ async function autoMoveToInProgress() {
   }
 }
 
+// Restore manual status overrides into job objects
+function restoreManualOverrides() {
+  var overrides = JSON.parse(localStorage.getItem('m2_manual_status') || '{}');
+  var todayStr = today();
+  // Clean up old overrides from previous days
+  var cleaned = {};
+  Object.keys(overrides).forEach(function(id) {
+    if (overrides[id].date === todayStr) cleaned[id] = overrides[id];
+  });
+  localStorage.setItem('m2_manual_status', JSON.stringify(cleaned));
+  // Apply to job objects
+  jobs.forEach(function(j) {
+    if (cleaned[j.id] && cleaned[j.id].status === 'In Progress') {
+      j._manualInProgress = true;
+    }
+  });
+}
+
 async function boot() {
   document.getElementById('loading-msg').textContent='Loading saved data...';
   loadCache();
+  restoreManualOverrides();
   renderDashboard();
   document.getElementById('mj-date').value=today();
   document.getElementById('me-date').value=today();
